@@ -1,0 +1,29 @@
+{
+  "name": "king-day-catalogue",
+  "version": "1.0.0",
+  "description": "KING DAY - Kids Products E-Commerce Catalogue Website and Admin Panel",
+  "private": true,
+  "scripts": {
+    "dev:server": "npm run dev --prefix server",
+    "dev:client": "npm run dev --prefix client",
+    "dev": "concurrently \"npm run dev:server\" \"npm run dev:client\"",
+    "build:server": "npm run build --prefix server",
+    "build:client": "npm run build --prefix client",
+    "build": "npm run build:server && npm run build:client",
+    "db:generate": "npx prisma generate",
+    "db:push": "npx prisma db push",
+    "db:seed": "npx tsx prisma/seed.ts",
+    "postinstall": "npx prisma generate"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2",
+    "prisma": "^5.14.0",
+    "tsx": "^4.10.5",
+    "typescript": "^5.4.5"
+  },
+  "dependencies": {
+    "@prisma/client": "^5.14.0",
+    "@types/bcryptjs": "^2.4.6",
+    "bcryptjs": "^3.0.3"
+  }
+}
