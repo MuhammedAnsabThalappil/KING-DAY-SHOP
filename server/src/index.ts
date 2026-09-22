@@ -14,7 +14,7 @@ app.use(helmet({ contentSecurityPolicy: false }));
 // CORS configuration
 app.use(
   cors({
-    origin: '*',
+    origin: process.env.CLIENT_URL || '*',
     credentials: true,
   })
 );
@@ -38,22 +38,38 @@ app.get('/health', (_req, res) => {
   res.json({ status: 'ok', brand: 'KING DAY', timestamp: new Date().toISOString() });
 });
 
-// Serve frontend static build in production if available
+// Serve frontend static build in production
 const clientDistPath = path.resolve(__dirname, '../../client/dist');
-app.use(express.static(clientDistPath));
 
-app.get('*', (req, res, next) => {
-  if (req.path.startsWith('/api')) {
-    return next();
-  }
-  res.sendFile(path.join(clientDistPath, 'index.html'), (err) => {
-    if (err) {
-      res.status(404).json({ message: 'API Route Not Found' });
+// Only serve static files if the dist folder exists (production)
+import fs from 'fs';
+if (fs.existsSync(clientDistPath)) {
+  app.use(express.static(clientDistPath));
+
+  app.get('*', (req, res, next) => {
+    if (req.path.startsWith('/api') || req.path === '/health') {
+      return next();
     }
+    res.sendFile(path.join(clientDistPath, 'index.html'), (err) => {
+      if (err) {
+        res.status(404).json({ message: 'Not Found' });
+      }
+    });
   });
-});
+} else {
+  // Development fallback: API-only message on root
+  app.get('/', (_req, res) => {
+    res.json({
+      message: '🛍️ KING DAY API Server is running!',
+      docs: 'API endpoints available at /api/*',
+      health: '/health',
+    });
+  });
+}
 
-app.listen(config.port, () => {
-  console.log(`🚀 KING DAY Server listening on port ${config.port}`);
+const PORT = config.port;
+app.listen(PORT, () => {
+  console.log(`🚀 KING DAY Server listening on port ${PORT}`);
   console.log(`📡 Environment: ${process.env.NODE_ENV || 'development'}`);
+  console.log(`🗄️  Database: ${process.env.DATABASE_URL ? 'Connected' : 'Local SQLite'}`);
 });

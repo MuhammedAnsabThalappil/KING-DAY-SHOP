@@ -3,17 +3,24 @@
   "version": "1.0.0",
   "description": "KING DAY - Kids Products E-Commerce Catalogue Website and Admin Panel",
   "private": true,
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=9.0.0"
+  },
   "scripts": {
     "dev:server": "npm run dev --prefix server",
     "dev:client": "npm run dev --prefix client",
     "dev": "concurrently \"npm run dev:server\" \"npm run dev:client\"",
+    "install:all": "npm install && npm install --prefix server && npm install --prefix client",
     "build:server": "npm run build --prefix server",
     "build:client": "npm run build --prefix client",
     "build": "npm run build:server && npm run build:client",
+    "start": "node server/dist/index.js",
     "db:generate": "npx prisma generate",
     "db:push": "npx prisma db push",
+    "db:migrate": "npx prisma migrate deploy",
     "db:seed": "npx tsx prisma/seed.ts",
-    "postinstall": "npx prisma generate"
+    "postinstall": "npm install --prefix server && npm install --prefix client && npx prisma generate"
   },
   "devDependencies": {
     "concurrently": "^8.2.2",
