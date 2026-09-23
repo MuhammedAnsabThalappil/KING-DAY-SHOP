@@ -36,9 +36,10 @@ export const Shop: React.FC = () => {
     const fetchCategories = async () => {
       try {
         const catData = await api.getCategories();
-        setCategories(catData);
+        setCategories(Array.isArray(catData) ? catData : []);
       } catch (err) {
-        console.error('Failed to load categories:', err);
+        console.warn('Failed to load categories:', err);
+        setCategories([]);
       }
     };
     fetchCategories();
@@ -58,10 +59,12 @@ export const Shop: React.FC = () => {
           sort: sortOption,
           limit: 100,
         });
-        setProducts(res.products);
-        setTotalProducts(res.pagination.total);
+        setProducts(Array.isArray(res?.products) ? res.products : []);
+        setTotalProducts(res?.pagination?.total ?? 0);
       } catch (err) {
-        console.error('Failed to fetch products:', err);
+        console.warn('Failed to fetch products:', err);
+        setProducts([]);
+        setTotalProducts(0);
       } finally {
         setIsLoading(false);
       }
@@ -172,9 +175,9 @@ export const Shop: React.FC = () => {
               >
                 All Categories
               </button>
-              {categories.map((cat) => (
+              {Array.isArray(categories) && categories.map((cat) => (
                 <button
-                  key={cat.id}
+                  key={cat.id || cat.slug}
                   onClick={() => updateCategoryFilter(cat.slug)}
                   className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-sm font-medium transition-colors ${
                     selectedCategory === cat.slug
@@ -327,9 +330,9 @@ export const Shop: React.FC = () => {
               >
                 All Categories
               </button>
-              {categories.map((cat) => (
+              {Array.isArray(categories) && categories.map((cat) => (
                 <button
-                  key={cat.id}
+                  key={cat.id || cat.slug}
                   onClick={() => {
                     updateCategoryFilter(cat.slug);
                     setIsMobileFilterOpen(false);

@@ -38,12 +38,14 @@ export const AddProduct: React.FC = () => {
     const loadCategories = async () => {
       try {
         const data = await api.getCategories(true);
-        setCategories(data);
-        if (data.length > 0) {
-          setCategoryId(data[0].id);
+        const cats = Array.isArray(data) ? data : [];
+        setCategories(cats);
+        if (cats.length > 0 && cats[0]?.id) {
+          setCategoryId(cats[0].id);
         }
       } catch (err) {
-        console.error('Failed to load categories:', err);
+        console.warn('Failed to load categories:', err);
+        setCategories([]);
       }
     };
     loadCategories();

@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { ChevronRight, Filter, Search } from 'lucide-react';
+import { ChevronRight, Search, Phone, FolderTree } from 'lucide-react';
 import { Category, Product } from '../types';
 import { api } from '../services/api';
 import { ProductCard } from '../components/product/ProductCard';
 import { ProductCardSkeleton } from '../components/ui/SkeletonLoader';
+import { generateGeneralWhatsAppUrl } from '../utils/formatters';
 
 export const CategoryView: React.FC = () => {
   const { slug } = useParams<{ slug: string }>();
@@ -24,10 +25,12 @@ export const CategoryView: React.FC = () => {
           api.getCategoryBySlug(slug),
           api.getProducts({ categorySlug: slug, sort: sortOption, search: searchQuery || undefined, limit: 100 }),
         ]);
-        setCategory(catData);
-        setProducts(prodData.products);
+        setCategory(catData || null);
+        setProducts(Array.isArray(prodData?.products) ? prodData.products : []);
       } catch (err) {
-        console.error('Failed to load category view:', err);
+        console.warn('Failed to load category view:', err);
+        setCategory(null);
+        setProducts([]);
       } finally {
         setIsLoading(false);
       }
@@ -36,7 +39,7 @@ export const CategoryView: React.FC = () => {
     fetchCategoryAndProducts();
   }, [slug, sortOption, searchQuery]);
 
-  if (isLoading && !category) {
+  if (isLoading) {
     return (
       <div className="max-w-7xl mx-auto px-4 py-12 space-y-6 animate-pulse">
         <div className="h-6 bg-gray-200 rounded w-1/4"></div>
@@ -45,6 +48,39 @@ export const CategoryView: React.FC = () => {
           {[1, 2, 3, 4].map((n) => (
             <ProductCardSkeleton key={n} />
           ))}
+        </div>
+      </div>
+    );
+  }
+
+  if (!category && !isLoading) {
+    return (
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 text-center space-y-6">
+        <div className="w-16 h-16 bg-purple-100 text-brand-purple rounded-full flex items-center justify-center mx-auto">
+          <FolderTree className="w-8 h-8" />
+        </div>
+        <div className="space-y-2 max-w-md mx-auto">
+          <h2 className="text-2xl font-black text-slate-900 font-display">Category Not Found</h2>
+          <p className="text-sm text-slate-500">
+            The category you are looking for may have been moved or is temporarily unavailable.
+          </p>
+        </div>
+        <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
+          <Link
+            to="/categories"
+            className="inline-block bg-brand-purple hover:bg-purple-700 text-white font-bold px-6 py-3 rounded-full text-xs shadow transition-all"
+          >
+            Browse All Categories
+          </Link>
+          <a
+            href={generateGeneralWhatsAppUrl(`Hello KING DAY, I was looking for category '${slug}'`)}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center space-x-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-6 py-3 rounded-full text-xs shadow transition-all"
+          >
+            <Phone className="w-4 h-4 fill-current" />
+            <span>Enquire on WhatsApp</span>
+          </a>
         </div>
       </div>
     );
@@ -78,7 +114,15 @@ export const CategoryView: React.FC = () => {
 
           {category.image && (
             <div className="w-full md:w-64 aspect-video rounded-2xl overflow-hidden border-2 border-white/20 shadow-lg flex-shrink-0 z-10">
-              <img src={category.image} alt={category.name} className="w-full h-full object-cover" />
+              <img
+                src={category.image}
+                alt={category.name}
+                className="w-full h-full object-cover"
+                onError={(e) => {
+                  (e.currentTarget as HTMLImageElement).src =
+                    'https://images.unsplash.com/photo-1566576912321-d58ddd7a6088?auto=format&fit=crop&q=80&w=600';
+                }}
+              />
             </div>
           )}
         </div>
@@ -113,13 +157,7 @@ export const CategoryView: React.FC = () => {
       </div>
 
       {/* Products Grid */}
-      {isLoading ? (
-        <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-          {[1, 2, 3, 4].map((n) => (
-            <ProductCardSkeleton key={n} />
-          ))}
-        </div>
-      ) : products.length === 0 ? (
+      {products.length === 0 ? (
         <div className="bg-white rounded-3xl p-12 text-center border border-gray-100 shadow-sm space-y-3">
           <h3 className="text-lg font-bold text-slate-800">No products found in this category</h3>
           <p className="text-xs text-slate-500">Check back soon for new arrivals in {category?.name}.</p>

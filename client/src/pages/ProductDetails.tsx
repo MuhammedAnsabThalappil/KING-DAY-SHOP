@@ -18,7 +18,7 @@ import { Product } from '../types';
 import { api } from '../services/api';
 import { ProductGallery } from '../components/product/ProductGallery';
 import { ProductCard } from '../components/product/ProductCard';
-import { formatINR, calculateDiscount, generateWhatsAppProductUrl } from '../utils/formatters';
+import { formatINR, calculateDiscount, generateWhatsAppProductUrl, generateGeneralWhatsAppUrl } from '../utils/formatters';
 
 export const ProductDetails: React.FC = () => {
   const { slug } = useParams<{ slug: string }>();
@@ -33,11 +33,13 @@ export const ProductDetails: React.FC = () => {
       setIsLoading(true);
       try {
         const res = await api.getProductBySlug(slug);
-        setProduct(res.product);
-        setRelatedProducts(res.relatedProducts || []);
+        setProduct(res?.product || null);
+        setRelatedProducts(Array.isArray(res?.relatedProducts) ? res.relatedProducts : []);
         window.scrollTo({ top: 0, behavior: 'smooth' });
       } catch (err) {
-        console.error('Failed to load product details:', err);
+        console.warn('Failed to load product details:', err);
+        setProduct(null);
+        setRelatedProducts([]);
       } finally {
         setIsLoading(false);
       }
@@ -46,7 +48,7 @@ export const ProductDetails: React.FC = () => {
     fetchProductDetails();
   }, [slug]);
 
-  if (isLoading || !product) {
+  if (isLoading) {
     return (
       <div className="max-w-7xl mx-auto px-4 py-12 space-y-8 animate-pulse">
         <div className="h-6 bg-gray-200 rounded w-1/3"></div>
@@ -58,6 +60,39 @@ export const ProductDetails: React.FC = () => {
             <div className="h-24 bg-gray-200 rounded-2xl w-full"></div>
             <div className="h-12 bg-gray-200 rounded-full w-full"></div>
           </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (!product) {
+    return (
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 text-center space-y-6">
+        <div className="w-16 h-16 bg-pink-100 text-brand-pink rounded-full flex items-center justify-center mx-auto">
+          <Sparkles className="w-8 h-8" />
+        </div>
+        <div className="space-y-2 max-w-md mx-auto">
+          <h2 className="text-2xl font-black text-slate-900 font-display">Product Unavailable</h2>
+          <p className="text-sm text-slate-500">
+            This item may be temporarily out of catalogue or the link might be outdated. Connect with us on WhatsApp to check availability.
+          </p>
+        </div>
+        <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
+          <Link
+            to="/shop"
+            className="inline-block bg-brand-blue hover:bg-blue-900 text-white font-bold px-6 py-3 rounded-full text-xs shadow transition-all"
+          >
+            Browse All Products
+          </Link>
+          <a
+            href={generateGeneralWhatsAppUrl(`Hello KING DAY, I was inquiring about product: ${slug}`)}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center space-x-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-6 py-3 rounded-full text-xs shadow transition-all"
+          >
+            <Phone className="w-4 h-4 fill-current" />
+            <span>Inquire on WhatsApp</span>
+          </a>
         </div>
       </div>
     );

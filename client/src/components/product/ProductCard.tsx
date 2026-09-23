@@ -8,15 +8,23 @@ interface ProductCardProps {
   product: Product;
 }
 
-export const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
-  const discountPercent = calculateDiscount(product.mrp, product.salePrice);
-  const primaryImage =
-    product.images?.find((img) => img.isPrimary)?.url ||
-    product.images?.[0]?.url ||
-    'https://images.unsplash.com/photo-1594787318286-3d835c1d207f?auto=format&fit=crop&q=80&w=600';
+const FALLBACK_IMAGE = 'https://images.unsplash.com/photo-1594787318286-3d835c1d207f?auto=format&fit=crop&q=80&w=600';
 
-  const isOutOfStock = product.stockQuantity <= 0;
-  const isLowStock = product.stockQuantity > 0 && product.stockQuantity <= 3;
+export const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
+  if (!product || !product.id) return null;
+
+  const mrp = Number(product.mrp) || 0;
+  const salePrice = Number(product.salePrice) || 0;
+  const stockQuantity = Number(product.stockQuantity) || 0;
+  const discountPercent = calculateDiscount(mrp, salePrice);
+
+  const primaryImage =
+    (Array.isArray(product.images) && product.images.find((img) => img?.isPrimary)?.url) ||
+    (Array.isArray(product.images) && product.images[0]?.url) ||
+    FALLBACK_IMAGE;
+
+  const isOutOfStock = stockQuantity <= 0;
+  const isLowStock = stockQuantity > 0 && stockQuantity <= 3;
 
   const whatsappUrl = generateWhatsAppProductUrl(product);
 
@@ -42,12 +50,15 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
       </div>
 
       {/* Image Container */}
-      <Link to={`/product/${product.slug}`} className="block relative aspect-square overflow-hidden bg-gray-50">
+      <Link to={`/product/${product.slug || product.id}`} className="block relative aspect-square overflow-hidden bg-gray-50">
         <img
           src={primaryImage}
-          alt={product.name}
+          alt={product.name || 'KING DAY Toy'}
           loading="lazy"
           className="w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-500"
+          onError={(e) => {
+            (e.currentTarget as HTMLImageElement).src = FALLBACK_IMAGE;
+          }}
         />
         {isOutOfStock && (
           <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-[2px] flex items-center justify-center">
@@ -62,7 +73,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
       <div className="p-4 flex-1 flex flex-col justify-between">
         <div>
           {/* Category Tag */}
-          {product.category && (
+          {product.category?.name && (
             <span className="text-[11px] font-bold text-brand-purple uppercase tracking-wider block mb-1">
               {product.category.name}
             </span>
@@ -70,10 +81,10 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
 
           {/* Product Title */}
           <Link
-            to={`/product/${product.slug}`}
+            to={`/product/${product.slug || product.id}`}
             className="font-bold text-slate-800 text-sm hover:text-brand-purple line-clamp-2 transition-colors leading-snug"
           >
-            {product.name}
+            {product.name || 'Product Details'}
           </Link>
         </div>
 
@@ -81,11 +92,11 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
           {/* Pricing Row */}
           <div className="flex items-baseline space-x-2">
             <span className="text-lg font-black text-brand-blue font-display">
-              {formatINR(product.salePrice)}
+              {formatINR(salePrice)}
             </span>
-            {product.mrp > product.salePrice && (
+            {mrp > salePrice && (
               <span className="text-xs text-slate-400 line-through">
-                {formatINR(product.mrp)}
+                {formatINR(mrp)}
               </span>
             )}
           </div>
@@ -100,7 +111,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
             ) : isLowStock ? (
               <span className="text-amber-600 flex items-center space-x-1">
                 <AlertTriangle className="w-3.5 h-3.5" />
-                <span>Only {product.stockQuantity} left</span>
+                <span>Only {stockQuantity} left</span>
               </span>
             ) : (
               <span className="text-emerald-600 flex items-center space-x-1">

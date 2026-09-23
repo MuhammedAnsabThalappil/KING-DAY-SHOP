@@ -21,16 +21,21 @@ const getAuthHeaders = (): HeadersInit => {
 
 /**
  * Safely parse the response body as JSON.
- * Handles: empty bodies, non-JSON content types (HTML 404 pages),
+ * Handles: empty bodies, non-JSON content types (HTML 404 pages/SPA fallbacks),
  * network errors, and Vercel/CDN error pages gracefully.
  */
 async function safeJson(response: Response): Promise<unknown> {
   // 204 No Content — no body to parse
   if (response.status === 204) return null;
 
-  const contentType = response.headers.get('content-type') ?? '';
+  const contentType = (response.headers.get('content-type') ?? '').toLowerCase();
 
-  // Only try to parse if the server says it's JSON
+  // If server explicitly says it's HTML, it's NOT an API JSON response (likely SPA fallback / CDN error)
+  if (contentType.includes('text/html')) {
+    return null;
+  }
+
+  // Only try to parse directly if the server says it's JSON
   if (contentType.includes('application/json')) {
     try {
       return await response.json();
@@ -39,13 +44,16 @@ async function safeJson(response: Response): Promise<unknown> {
     }
   }
 
-  // Non-JSON response (HTML error page from Vercel/CDN, plain text, etc.)
-  // Try to read as text for a better error message, but don't crash
+  // Try text parsing for non-standard JSON responses
   try {
     const text = await response.text();
-    if (text.trim().startsWith('{') || text.trim().startsWith('[')) {
-      // Looks like JSON even without the correct Content-Type header
-      return JSON.parse(text);
+    const trimmed = text.trim();
+    if (trimmed.startsWith('<')) {
+      // HTML response
+      return null;
+    }
+    if (trimmed.startsWith('{') || trimmed.startsWith('[')) {
+      return JSON.parse(trimmed);
     }
   } catch {
     // ignore
@@ -73,6 +81,20 @@ async function handleResponse<T>(response: Response): Promise<T> {
     throw new Error(msg);
   }
 
+  // If status is 204 No Content, null is expected
+  if (response.status === 204) {
+    return undefined as unknown as T;
+  }
+
+  // If response.ok was true but data is null/undefined, the endpoint returned HTML or empty body instead of JSON!
+  if (data === null || data === undefined) {
+    throw new Error(
+      `Invalid API response (HTTP ${response.status}). Expected JSON data but received non-JSON (${
+        response.headers.get('content-type') || 'unknown format'
+      }).`
+    );
+  }
+
   return data as T;
 }
 
@@ -84,7 +106,6 @@ async function apiFetch(input: RequestInfo, init?: RequestInit): Promise<Respons
   try {
     return await fetch(input, init);
   } catch (err) {
-    // Network error / backend unreachable
     throw new Error(
       'Unable to connect to the KING DAY server. ' +
       'Please check your internet connection or contact support.'
@@ -95,13 +116,25 @@ async function apiFetch(input: RequestInfo, init?: RequestInit): Promise<Respons
 export const api = {
   // Public Categories
   async getCategories(includeInactive = false): Promise<Category[]> {
-    const res = await apiFetch(`${API_BASE_URL}/categories?includeInactive=${includeInactive}`);
-    return handleResponse<Category[]>(res);
+    try {
+      const res = await apiFetch(`${API_BASE_URL}/categories?includeInactive=${includeInactive}`);
+      const data = await handleResponse<Category[]>(res);
+      return Array.isArray(data) ? data : [];
+    } catch (err) {
+      console.warn('api.getCategories warning:', err);
+      return [];
+    }
   },
 
-  async getCategoryBySlug(slug: string): Promise<Category> {
-    const res = await apiFetch(`${API_BASE_URL}/categories/${slug}`);
-    return handleResponse<Category>(res);
+  async getCategoryBySlug(slug: string): Promise<Category | null> {
+    try {
+      const res = await apiFetch(`${API_BASE_URL}/categories/${slug}`);
+      const data = await handleResponse<Category>(res);
+      return data || null;
+    } catch (err) {
+      console.warn(`api.getCategoryBySlug(${slug}) warning:`, err);
+      return null;
+    }
   },
 
   // Public Products
@@ -109,26 +142,61 @@ export const api = {
     products: Product[];
     pagination: { total: number; page: number; limit: number; totalPages: number };
   }> {
-    const query = new URLSearchParams();
-    if (params.categorySlug) query.append('categorySlug', params.categorySlug);
-    if (params.categoryId) query.append('categoryId', params.categoryId);
-    if (params.search) query.append('search', params.search);
-    if (params.featured) query.append('featured', 'true');
-    if (params.inStock) query.append('inStock', 'true');
-    if (params.minPrice) query.append('minPrice', params.minPrice.toString());
-    if (params.maxPrice) query.append('maxPrice', params.maxPrice.toString());
-    if (params.sort) query.append('sort', params.sort);
-    if (params.page) query.append('page', params.page.toString());
-    if (params.limit) query.append('limit', params.limit.toString());
-    if (params.includeInactive) query.append('includeInactive', 'true');
+    const defaultPagination = {
+      total: 0,
+      page: params.page ? Number(params.page) : 1,
+      limit: params.limit ? Number(params.limit) : 20,
+      totalPages: 1,
+    };
 
-    const res = await apiFetch(`${API_BASE_URL}/products?${query.toString()}`);
-    return handleResponse(res);
+    try {
+      const query = new URLSearchParams();
+      if (params.categorySlug) query.append('categorySlug', params.categorySlug);
+      if (params.categoryId) query.append('categoryId', params.categoryId);
+      if (params.search) query.append('search', params.search);
+      if (params.featured) query.append('featured', 'true');
+      if (params.inStock) query.append('inStock', 'true');
+      if (params.minPrice) query.append('minPrice', params.minPrice.toString());
+      if (params.maxPrice) query.append('maxPrice', params.maxPrice.toString());
+      if (params.sort) query.append('sort', params.sort);
+      if (params.page) query.append('page', params.page.toString());
+      if (params.limit) query.append('limit', params.limit.toString());
+      if (params.includeInactive) query.append('includeInactive', 'true');
+
+      const res = await apiFetch(`${API_BASE_URL}/products?${query.toString()}`);
+      const data = await handleResponse<{
+        products: Product[];
+        pagination: { total: number; page: number; limit: number; totalPages: number };
+      }>(res);
+
+      return {
+        products: Array.isArray(data?.products) ? data.products : [],
+        pagination: data?.pagination || defaultPagination,
+      };
+    } catch (err) {
+      console.warn('api.getProducts warning:', err);
+      return {
+        products: [],
+        pagination: defaultPagination,
+      };
+    }
   },
 
-  async getProductBySlug(slug: string): Promise<{ product: Product; relatedProducts: Product[] }> {
-    const res = await apiFetch(`${API_BASE_URL}/products/${slug}`);
-    return handleResponse(res);
+  async getProductBySlug(slug: string): Promise<{ product: Product | null; relatedProducts: Product[] }> {
+    try {
+      const res = await apiFetch(`${API_BASE_URL}/products/${slug}`);
+      const data = await handleResponse<{ product: Product; relatedProducts: Product[] }>(res);
+      return {
+        product: data?.product || null,
+        relatedProducts: Array.isArray(data?.relatedProducts) ? data.relatedProducts : [],
+      };
+    } catch (err) {
+      console.warn(`api.getProductBySlug(${slug}) warning:`, err);
+      return {
+        product: null,
+        relatedProducts: [],
+      };
+    }
   },
 
   // Admin Auth
@@ -153,10 +221,32 @@ export const api = {
 
   // Admin Dashboard
   async getDashboardStats(): Promise<DashboardStats> {
-    const res = await apiFetch(`${API_BASE_URL}/admin/dashboard`, {
-      headers: getAuthHeaders(),
-    });
-    return handleResponse(res);
+    const fallbackStats: DashboardStats = {
+      totalProducts: 0,
+      activeProducts: 0,
+      totalCategories: 0,
+      outOfStock: 0,
+      lowStock: 0,
+      featuredProducts: 0,
+    };
+
+    try {
+      const res = await apiFetch(`${API_BASE_URL}/admin/dashboard`, {
+        headers: getAuthHeaders(),
+      });
+      const data = await handleResponse<DashboardStats>(res);
+      return {
+        totalProducts: data?.totalProducts ?? 0,
+        activeProducts: data?.activeProducts ?? 0,
+        totalCategories: data?.totalCategories ?? 0,
+        outOfStock: data?.outOfStock ?? 0,
+        lowStock: data?.lowStock ?? 0,
+        featuredProducts: data?.featuredProducts ?? 0,
+      };
+    } catch (err) {
+      console.warn('api.getDashboardStats warning:', err);
+      return fallbackStats;
+    }
   },
 
   // Admin Categories

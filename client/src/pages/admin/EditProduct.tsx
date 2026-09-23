@@ -41,11 +41,11 @@ export const EditProduct: React.FC = () => {
       if (!id) return;
       try {
         const catData = await api.getCategories(true);
-        setCategories(catData);
+        setCategories(Array.isArray(catData) ? catData : []);
 
         // Fetch target product via API list filter or detail
         const res = await api.getProducts({ includeInactive: true, limit: 200 });
-        const target = res.products.find((p) => p.id === id);
+        const target = Array.isArray(res?.products) ? res.products.find((p) => p.id === id) : undefined;
 
         if (target) {
           setName(target.name);

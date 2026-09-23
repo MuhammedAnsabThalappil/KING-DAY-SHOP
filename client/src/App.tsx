@@ -5,6 +5,8 @@ import { Footer } from './components/layout/Footer';
 import { FloatingWhatsApp } from './components/ui/FloatingWhatsApp';
 import { AuthProvider, useAuth } from './context/AuthContext';
 
+import { ErrorBoundary } from './components/common/ErrorBoundary';
+
 // Customer Pages
 import { Home } from './pages/Home';
 import { Shop } from './pages/Shop';
@@ -123,83 +125,85 @@ export const App: React.FC = () => {
       {!isAdminRoute && <Header />}
 
       <main className="flex-1">
-        <Routes>
-          {/* Public Customer Routes */}
-          <Route path="/" element={<Home />} />
-          <Route path="/shop" element={<Shop />} />
-          <Route path="/categories" element={<Categories />} />
-          <Route path="/category/:slug" element={<CategoryView />} />
-          <Route path="/product/:slug" element={<ProductDetails />} />
-          <Route path="/about" element={<About />} />
-          <Route path="/contact" element={<Contact />} />
+        <ErrorBoundary>
+          <Routes>
+            {/* Public Customer Routes */}
+            <Route path="/" element={<Home />} />
+            <Route path="/shop" element={<Shop />} />
+            <Route path="/categories" element={<Categories />} />
+            <Route path="/category/:slug" element={<CategoryView />} />
+            <Route path="/product/:slug" element={<ProductDetails />} />
+            <Route path="/about" element={<About />} />
+            <Route path="/contact" element={<Contact />} />
 
-          {/* Admin Routes */}
-          <Route path="/admin/login" element={<AdminLogin />} />
+            {/* Admin Routes */}
+            <Route path="/admin/login" element={<AdminLogin />} />
 
-          <Route
-            path="/admin"
-            element={
-              <ProtectedAdminRoute>
-                <AdminLayout>
-                  <AdminDashboard />
-                </AdminLayout>
-              </ProtectedAdminRoute>
-            }
-          />
-          <Route
-            path="/admin/products"
-            element={
-              <ProtectedAdminRoute>
-                <AdminLayout>
-                  <AdminProducts />
-                </AdminLayout>
-              </ProtectedAdminRoute>
-            }
-          />
-          <Route
-            path="/admin/products/new"
-            element={
-              <ProtectedAdminRoute>
-                <AdminLayout>
-                  <AddProduct />
-                </AdminLayout>
-              </ProtectedAdminRoute>
-            }
-          />
-          <Route
-            path="/admin/products/:id/edit"
-            element={
-              <ProtectedAdminRoute>
-                <AdminLayout>
-                  <EditProduct />
-                </AdminLayout>
-              </ProtectedAdminRoute>
-            }
-          />
-          <Route
-            path="/admin/categories"
-            element={
-              <ProtectedAdminRoute>
-                <AdminLayout>
-                  <AdminCategories />
-                </AdminLayout>
-              </ProtectedAdminRoute>
-            }
-          />
-          <Route
-            path="/admin/inventory"
-            element={
-              <ProtectedAdminRoute>
-                <AdminLayout>
-                  <AdminInventory />
-                </AdminLayout>
-              </ProtectedAdminRoute>
-            }
-          />
+            <Route
+              path="/admin"
+              element={
+                <ProtectedAdminRoute>
+                  <AdminLayout>
+                    <AdminDashboard />
+                  </AdminLayout>
+                </ProtectedAdminRoute>
+              }
+            />
+            <Route
+              path="/admin/products"
+              element={
+                <ProtectedAdminRoute>
+                  <AdminLayout>
+                    <AdminProducts />
+                  </AdminLayout>
+                </ProtectedAdminRoute>
+              }
+            />
+            <Route
+              path="/admin/products/new"
+              element={
+                <ProtectedAdminRoute>
+                  <AdminLayout>
+                    <AddProduct />
+                  </AdminLayout>
+                </ProtectedAdminRoute>
+              }
+            />
+            <Route
+              path="/admin/products/:id/edit"
+              element={
+                <ProtectedAdminRoute>
+                  <AdminLayout>
+                    <EditProduct />
+                  </AdminLayout>
+                </ProtectedAdminRoute>
+              }
+            />
+            <Route
+              path="/admin/categories"
+              element={
+                <ProtectedAdminRoute>
+                  <AdminLayout>
+                    <AdminCategories />
+                  </AdminLayout>
+                </ProtectedAdminRoute>
+              }
+            />
+            <Route
+              path="/admin/inventory"
+              element={
+                <ProtectedAdminRoute>
+                  <AdminLayout>
+                    <AdminInventory />
+                  </AdminLayout>
+                </ProtectedAdminRoute>
+              }
+            />
 
-          {/* Catch-all Fallback */}
-          <Route path="*" element={<Navigate to="/" replace />} />
-        </Routes>
+            {/* Catch-all Fallback */}
+            <Route path="*" element={<Navigate to="/" replace />} />
+          </Routes>
+        </ErrorBoundary>
       </main>
 
       {!isAdminRoute && <Footer />}

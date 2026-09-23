@@ -42,7 +42,7 @@ export const AdminProducts: React.FC = () => {
         api.getCategories(true),
       ]);
 
-      let filtered = prodRes.products;
+      let filtered = Array.isArray(prodRes?.products) ? prodRes.products : [];
 
       if (stockFilter === 'low') {
         filtered = filtered.filter((p) => p.stockQuantity > 0 && p.stockQuantity <= 5);
@@ -57,9 +57,11 @@ export const AdminProducts: React.FC = () => {
       }
 
       setProducts(filtered);
-      setCategories(catRes);
+      setCategories(Array.isArray(catRes) ? catRes : []);
     } catch (err) {
-      console.error('Failed to load products list:', err);
+      console.warn('Failed to load products list:', err);
+      setProducts([]);
+      setCategories([]);
     } finally {
       setIsLoading(false);
     }

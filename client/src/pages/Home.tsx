@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Sparkles, Phone, ArrowRight, ShieldCheck, Heart, Star, CheckCircle2, ChevronRight, Zap } from 'lucide-react';
+import { Sparkles, Phone, ArrowRight, ShieldCheck, Star, ChevronRight, Zap, RefreshCw } from 'lucide-react';
 import { Category, Product } from '../types';
 import { api } from '../services/api';
 import { ProductCard } from '../components/product/ProductCard';
-import { ProductCardSkeleton } from '../components/ui/SkeletonLoader';
+import { ProductCardSkeleton, CategoryCardSkeleton } from '../components/ui/SkeletonLoader';
 import { generateGeneralWhatsAppUrl } from '../utils/formatters';
 
 export const Home: React.FC = () => {
@@ -12,25 +12,29 @@ export const Home: React.FC = () => {
   const [featuredProducts, setFeaturedProducts] = useState<Product[]>([]);
   const [newArrivals, setNewArrivals] = useState<Product[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [hasError, setHasError] = useState(false);
+
+  const loadHomeData = async () => {
+    setIsLoading(true);
+    setHasError(false);
+    try {
+      const [catData, featuredData, newestData] = await Promise.all([
+        api.getCategories(),
+        api.getProducts({ featured: true, limit: 4 }),
+        api.getProducts({ limit: 4, sort: 'newest' }),
+      ]);
+      setCategories(Array.isArray(catData) ? catData : []);
+      setFeaturedProducts(Array.isArray(featuredData?.products) ? featuredData.products : []);
+      setNewArrivals(Array.isArray(newestData?.products) ? newestData.products : []);
+    } catch (err) {
+      console.error('Failed to load homepage data:', err);
+      setHasError(true);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   useEffect(() => {
-    const loadHomeData = async () => {
-      try {
-        const [catData, featuredData, newestData] = await Promise.all([
-          api.getCategories(),
-          api.getProducts({ featured: true, limit: 4 }),
-          api.getProducts({ limit: 4, sort: 'newest' }),
-        ]);
-        setCategories(catData);
-        setFeaturedProducts(featuredData.products);
-        setNewArrivals(newestData.products);
-      } catch (err) {
-        console.error('Failed to load homepage data:', err);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
     loadHomeData();
   }, []);
 
@@ -105,6 +109,10 @@ export const Home: React.FC = () => {
                   src="https://images.unsplash.com/photo-1594787318286-3d835c1d207f?auto=format&fit=crop&q=80&w=1000"
                   alt="Mercedes Electric Ride-On Car"
                   className="w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-700"
+                  onError={(e) => {
+                    (e.currentTarget as HTMLImageElement).src =
+                      'https://images.unsplash.com/photo-1566576912321-d58ddd7a6088?auto=format&fit=crop&q=80&w=1000';
+                  }}
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-transparent to-transparent flex flex-col justify-end p-6">
                   <span className="bg-brand-pink text-white text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider w-fit mb-1">
@@ -140,45 +148,81 @@ export const Home: React.FC = () => {
           </Link>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-          {categories.map((cat) => (
-            <Link
-              key={cat.id}
-              to={`/category/${cat.slug}`}
-              className="group bg-white rounded-3xl p-5 border border-gray-100 shadow-sm hover:shadow-card-hover hover:border-brand-purple/40 transition-all duration-300 flex flex-col justify-between"
-            >
-              <div className="aspect-video w-full rounded-2xl overflow-hidden bg-gray-50 mb-4">
-                <img
-                  src={
-                    cat.image ||
-                    'https://images.unsplash.com/photo-1566576912321-d58ddd7a6088?auto=format&fit=crop&q=80&w=600'
-                  }
-                  alt={cat.name}
-                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                />
-              </div>
-
-              <div>
-                <div className="flex items-center justify-between">
-                  <h3 className="font-bold text-slate-900 text-lg group-hover:text-brand-purple transition-colors">
-                    {cat.name}
-                  </h3>
-                  <span className="text-xs font-bold bg-purple-50 text-brand-purple px-2.5 py-1 rounded-full">
-                    {cat.productCount ?? 0} Products
-                  </span>
+        {isLoading ? (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            {[1, 2, 3, 4].map((n) => (
+              <CategoryCardSkeleton key={n} />
+            ))}
+          </div>
+        ) : categories.length > 0 ? (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            {categories.map((cat) => (
+              <Link
+                key={cat.id || cat.slug}
+                to={`/category/${cat.slug}`}
+                className="group bg-white rounded-3xl p-5 border border-gray-100 shadow-sm hover:shadow-card-hover hover:border-brand-purple/40 transition-all duration-300 flex flex-col justify-between"
+              >
+                <div className="aspect-video w-full rounded-2xl overflow-hidden bg-gray-50 mb-4">
+                  <img
+                    src={
+                      cat.image ||
+                      'https://images.unsplash.com/photo-1566576912321-d58ddd7a6088?auto=format&fit=crop&q=80&w=600'
+                    }
+                    alt={cat.name}
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                    onError={(e) => {
+                      (e.currentTarget as HTMLImageElement).src =
+                        'https://images.unsplash.com/photo-1566576912321-d58ddd7a6088?auto=format&fit=crop&q=80&w=600';
+                    }}
+                  />
                 </div>
-                <p className="text-xs text-slate-500 mt-2 line-clamp-2 leading-relaxed">
-                  {cat.description || 'Discover premium items for kids.'}
-                </p>
-              </div>
 
-              <div className="mt-4 pt-3 border-t border-gray-50 flex items-center text-xs font-bold text-brand-purple group-hover:translate-x-1 transition-transform">
-                <span>VIEW PRODUCTS</span>
-                <ChevronRight className="w-4 h-4 ml-1" />
-              </div>
-            </Link>
-          ))}
-        </div>
+                <div>
+                  <div className="flex items-center justify-between">
+                    <h3 className="font-bold text-slate-900 text-lg group-hover:text-brand-purple transition-colors">
+                      {cat.name}
+                    </h3>
+                    <span className="text-xs font-bold bg-purple-50 text-brand-purple px-2.5 py-1 rounded-full">
+                      {cat.productCount ?? 0} Products
+                    </span>
+                  </div>
+                  <p className="text-xs text-slate-500 mt-2 line-clamp-2 leading-relaxed">
+                    {cat.description || 'Discover premium items for kids.'}
+                  </p>
+                </div>
+
+                <div className="mt-4 pt-3 border-t border-gray-50 flex items-center text-xs font-bold text-brand-purple group-hover:translate-x-1 transition-transform">
+                  <span>VIEW PRODUCTS</span>
+                  <ChevronRight className="w-4 h-4 ml-1" />
+                </div>
+              </Link>
+            ))}
+          </div>
+        ) : (
+          <div className="bg-white rounded-3xl p-8 text-center border border-gray-100 shadow-sm space-y-4">
+            <p className="text-sm font-semibold text-slate-600">
+              Browse our complete range of categories or connect directly on WhatsApp for full catalogue details.
+            </p>
+            <div className="flex flex-wrap items-center justify-center gap-3">
+              <Link
+                to="/shop"
+                className="inline-flex items-center space-x-2 bg-brand-blue text-white text-xs font-bold px-5 py-2.5 rounded-full shadow hover:bg-blue-900 transition-colors"
+              >
+                <span>Browse All Products</span>
+                <ChevronRight className="w-4 h-4" />
+              </Link>
+              <a
+                href={generateGeneralWhatsAppUrl()}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center space-x-2 bg-emerald-600 text-white text-xs font-bold px-5 py-2.5 rounded-full shadow hover:bg-emerald-700 transition-colors"
+              >
+                <Phone className="w-3.5 h-3.5 fill-current" />
+                <span>WhatsApp Helpline</span>
+              </a>
+            </div>
+          </div>
+        )}
       </section>
 
       {/* 3. FEATURED PRODUCTS SECTION */}
@@ -207,11 +251,34 @@ export const Home: React.FC = () => {
               <ProductCardSkeleton key={n} />
             ))}
           </div>
-        ) : (
+        ) : featuredProducts.length > 0 ? (
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
             {featuredProducts.map((product) => (
               <ProductCard key={product.id} product={product} />
             ))}
+          </div>
+        ) : (
+          <div className="bg-white rounded-3xl p-8 text-center border border-gray-100 shadow-sm space-y-3">
+            <p className="text-sm font-semibold text-slate-600">
+              Featured items are being refreshed in the live catalogue.
+            </p>
+            <div className="flex items-center justify-center gap-3">
+              <Link
+                to="/shop"
+                className="inline-block bg-brand-purple text-white text-xs font-bold px-5 py-2.5 rounded-full shadow hover:bg-purple-700 transition-colors"
+              >
+                Explore Shop
+              </Link>
+              {hasError && (
+                <button
+                  onClick={loadHomeData}
+                  className="inline-flex items-center space-x-1.5 bg-gray-100 hover:bg-gray-200 text-slate-700 text-xs font-bold px-4 py-2.5 rounded-full transition-colors"
+                >
+                  <RefreshCw className="w-3.5 h-3.5" />
+                  <span>Retry</span>
+                </button>
+              )}
+            </div>
           </div>
         )}
       </section>
@@ -238,11 +305,31 @@ export const Home: React.FC = () => {
             </Link>
           </div>
 
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
-            {newArrivals.map((product) => (
-              <ProductCard key={product.id} product={product} />
-            ))}
-          </div>
+          {isLoading ? (
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
+              {[1, 2, 3, 4].map((n) => (
+                <ProductCardSkeleton key={n} />
+              ))}
+            </div>
+          ) : newArrivals.length > 0 ? (
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
+              {newArrivals.map((product) => (
+                <ProductCard key={product.id} product={product} />
+              ))}
+            </div>
+          ) : (
+            <div className="bg-white rounded-3xl p-8 text-center border border-gray-100 shadow-sm space-y-3">
+              <p className="text-sm font-semibold text-slate-600">
+                New arrivals catalogue is being updated with fresh arrivals.
+              </p>
+              <Link
+                to="/shop"
+                className="inline-block bg-slate-900 text-white text-xs font-bold px-5 py-2.5 rounded-full shadow hover:bg-slate-800 transition-colors"
+              >
+                View Full Catalogue
+              </Link>
+            </div>
+          )}
         </div>
       </section>
 

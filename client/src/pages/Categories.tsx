@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { ChevronRight, Sparkles } from 'lucide-react';
+import { ChevronRight, Sparkles, Phone, ShoppingBag } from 'lucide-react';
 import { Category } from '../types';
 import { api } from '../services/api';
 import { CategoryCardSkeleton } from '../components/ui/SkeletonLoader';
+import { generateGeneralWhatsAppUrl } from '../utils/formatters';
 
 export const Categories: React.FC = () => {
   const [categories, setCategories] = useState<Category[]>([]);
@@ -13,9 +14,10 @@ export const Categories: React.FC = () => {
     const fetchCategories = async () => {
       try {
         const data = await api.getCategories();
-        setCategories(data);
+        setCategories(Array.isArray(data) ? data : []);
       } catch (err) {
-        console.error('Failed to load categories:', err);
+        console.warn('Failed to load categories:', err);
+        setCategories([]);
       } finally {
         setIsLoading(false);
       }
@@ -46,11 +48,11 @@ export const Categories: React.FC = () => {
             <CategoryCardSkeleton key={n} />
           ))}
         </div>
-      ) : (
+      ) : Array.isArray(categories) && categories.length > 0 ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
           {categories.map((cat) => (
             <Link
-              key={cat.id}
+              key={cat.id || cat.slug}
               to={`/category/${cat.slug}`}
               className="group bg-white rounded-3xl p-6 border border-gray-100 shadow-sm hover:shadow-card-hover hover:border-brand-purple/40 transition-all duration-300 flex flex-col justify-between"
             >
@@ -63,6 +65,10 @@ export const Categories: React.FC = () => {
                     }
                     alt={cat.name}
                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                    onError={(e) => {
+                      (e.currentTarget as HTMLImageElement).src =
+                        'https://images.unsplash.com/photo-1566576912321-d58ddd7a6088?auto=format&fit=crop&q=80&w=600';
+                    }}
                   />
                   <span className="absolute top-3 right-3 bg-brand-blue text-white text-xs font-bold px-3 py-1 rounded-full shadow-md">
                     {cat.productCount ?? 0} Products
@@ -83,6 +89,31 @@ export const Categories: React.FC = () => {
               </div>
             </Link>
           ))}
+        </div>
+      ) : (
+        <div className="bg-white rounded-3xl p-12 text-center border border-gray-100 shadow-sm space-y-4 max-w-lg mx-auto">
+          <h3 className="text-xl font-bold text-slate-900 font-display">Categories Updating</h3>
+          <p className="text-sm text-slate-500">
+            Our category catalogue is being synchronized. You can browse all available items in the shop or message us on WhatsApp.
+          </p>
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-2">
+            <Link
+              to="/shop"
+              className="w-full sm:w-auto inline-flex items-center justify-center space-x-2 bg-brand-blue hover:bg-blue-900 text-white font-bold px-6 py-3 rounded-full text-xs shadow transition-all"
+            >
+              <ShoppingBag className="w-4 h-4" />
+              <span>Browse Shop</span>
+            </Link>
+            <a
+              href={generateGeneralWhatsAppUrl()}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="w-full sm:w-auto inline-flex items-center justify-center space-x-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-6 py-3 rounded-full text-xs shadow transition-all"
+            >
+              <Phone className="w-4 h-4 fill-current" />
+              <span>WhatsApp Catalogue</span>
+            </a>
+          </div>
         </div>
       )}
     </div>

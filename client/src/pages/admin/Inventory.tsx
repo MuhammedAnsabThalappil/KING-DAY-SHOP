@@ -14,15 +14,18 @@ export const AdminInventory: React.FC = () => {
     setIsLoading(true);
     try {
       const res = await api.getProducts({ search: searchQuery || undefined, includeInactive: true, limit: 200 });
-      setProducts(res.products);
+      const prods = Array.isArray(res?.products) ? res.products : [];
+      setProducts(prods);
 
       const initialEdits: Record<string, number> = {};
-      res.products.forEach((p) => {
+      prods.forEach((p) => {
         initialEdits[p.id] = p.stockQuantity;
       });
       setStockEdits(initialEdits);
     } catch (err) {
-      console.error('Failed to load inventory:', err);
+      console.warn('Failed to load inventory:', err);
+      setProducts([]);
+      setStockEdits({});
     } finally {
       setIsLoading(false);
     }

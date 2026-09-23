@@ -19,9 +19,10 @@ export const Header: React.FC = () => {
     const fetchCategories = async () => {
       try {
         const data = await api.getCategories();
-        setCategories(data);
+        setCategories(Array.isArray(data) ? data : []);
       } catch (err) {
-        console.error('Failed to load header categories:', err);
+        console.warn('Failed to load header categories:', err);
+        setCategories([]);
       }
     };
     fetchCategories();
@@ -137,20 +138,26 @@ export const Header: React.FC = () => {
                   <div className="px-4 py-1.5 text-xs font-bold text-slate-400 uppercase tracking-wider border-b border-gray-50 mb-1">
                     Explore Categories
                   </div>
-                  {categories.map((cat) => (
-                    <Link
-                      key={cat.id}
-                      to={`/category/${cat.slug}`}
-                      className="flex items-center justify-between px-4 py-2.5 hover:bg-slate-50 text-slate-700 hover:text-brand-purple transition-colors"
-                    >
-                      <span className="font-medium text-sm">{cat.name}</span>
-                      {cat.productCount !== undefined && (
-                        <span className="text-xs bg-slate-100 text-slate-500 px-2 py-0.5 rounded-full">
-                          {cat.productCount}
-                        </span>
-                      )}
-                    </Link>
-                  ))}
+                  {Array.isArray(categories) && categories.length > 0 ? (
+                    categories.map((cat) => (
+                      <Link
+                        key={cat.id || cat.slug}
+                        to={`/category/${cat.slug}`}
+                        className="flex items-center justify-between px-4 py-2.5 hover:bg-slate-50 text-slate-700 hover:text-brand-purple transition-colors"
+                      >
+                        <span className="font-medium text-sm">{cat.name}</span>
+                        {cat.productCount !== undefined && (
+                          <span className="text-xs bg-slate-100 text-slate-500 px-2 py-0.5 rounded-full">
+                            {cat.productCount}
+                          </span>
+                        )}
+                      </Link>
+                    ))
+                  ) : (
+                    <div className="px-4 py-2 text-xs text-slate-400">
+                      Loading categories...
+                    </div>
+                  )}
                   <div className="border-t border-gray-100 mt-2 pt-2 px-4">
                     <Link
                       to="/categories"
@@ -262,9 +269,9 @@ export const Header: React.FC = () => {
                   >
                     ALL CATEGORIES
                   </Link>
-                  {categories.map((cat) => (
+                  {Array.isArray(categories) && categories.map((cat) => (
                     <Link
-                      key={cat.id}
+                      key={cat.id || cat.slug}
                       to={`/category/${cat.slug}`}
                       className="block py-2 text-sm text-slate-600 hover:text-brand-purple font-medium"
                     >
