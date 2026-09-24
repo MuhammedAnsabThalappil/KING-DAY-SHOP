@@ -324,16 +324,26 @@ export const api = {
     };
 
     try {
-      const res = await apiFetch(`${API_BASE_URL}/admin/categories`, {
+      let res = await apiFetch(`${API_BASE_URL}/admin/categories`, {
         method: 'POST',
         headers: getAuthHeaders(),
         body: JSON.stringify(categoryData),
       });
 
+      if (!res.ok) {
+        res = await apiFetch(`${API_BASE_URL}/categories`, {
+          method: 'POST',
+          headers: getAuthHeaders(),
+          body: JSON.stringify(categoryData),
+        });
+      }
+
       if (res.ok) {
         const serverCat = await handleResponse<Category>(res);
-        saveLocalCategory(serverCat);
-        return serverCat;
+        if (serverCat && typeof serverCat === 'object' && serverCat.id) {
+          saveLocalCategory(serverCat);
+          return serverCat;
+        }
       }
     } catch (err) {
       console.warn('Server createCategory network/405 fallback engaged:', err);

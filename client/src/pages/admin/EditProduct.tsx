@@ -1,12 +1,19 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Save, ArrowLeft, Plus, Trash2, X, FolderTree } from 'lucide-react';
-import { Category, Product } from '../../types';
+import { Save, ArrowLeft, Plus, Trash2, X, FolderTree, Upload, Star, ArrowRight } from 'lucide-react';
+import { Category } from '../../types';
 import { api } from '../../services/api';
+
+interface ProductImageItem {
+  id?: string;
+  url: string;
+  isPrimary: boolean;
+}
 
 export const EditProduct: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [categories, setCategories] = useState<Category[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -38,8 +45,10 @@ export const EditProduct: React.FC = () => {
   const [isCreatingCat, setIsCreatingCat] = useState(false);
   const [catModalError, setCatModalError] = useState('');
 
+  // Images State
+  const [images, setImages] = useState<ProductImageItem[]>([]);
+
   // Dynamic Lists
-  const [imageUrls, setImageUrls] = useState<string[]>(['']);
   const [features, setFeatures] = useState<string[]>(['']);
   const [specifications, setSpecifications] = useState<{ key: string; value: string }[]>([
     { key: '', value: '' },
@@ -64,7 +73,6 @@ export const EditProduct: React.FC = () => {
       try {
         await loadCategories();
 
-        // Fetch target product via API list filter
         const res = await api.getProducts({ includeInactive: true, limit: 200 });
         const target = Array.isArray(res?.products) ? res.products.find((p) => p.id === id) : undefined;
 
@@ -85,7 +93,13 @@ export const EditProduct: React.FC = () => {
           setSeoDescription(target.seoDescription || '');
 
           if (target.images && target.images.length > 0) {
-            setImageUrls(target.images.map((img) => img.url));
+            setImages(
+              target.images.map((img, i) => ({
+                id: img.id,
+                url: img.url,
+                isPrimary: Boolean(img.isPrimary || i === 0),
+              }))
+            );
           }
           if (target.features && target.features.length > 0) {
             setFeatures(target.features.map((f) => f.feature));
@@ -154,6 +168,74 @@ export const EditProduct: React.FC = () => {
     }
   };
 
+  // Image Handlers
+  const handleFilesSelected = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!e.target.files || e.target.files.length === 0) return;
+    const files = Array.from(e.target.files);
+
+    files.forEach((file) => {
+      const reader = new FileReader();
+      reader.onload = (evt) => {
+        const dataUrl = evt.target?.result as string;
+        if (dataUrl) {
+          setImages((prev) => [
+            ...prev,
+            { url: dataUrl, isPrimary: prev.length === 0 },
+          ]);
+        }
+      };
+      reader.readAsDataURL(file);
+    });
+    e.target.value = '';
+  };
+
+  const handleAddUrlInput = () => {
+    setImages((prev) => [
+      ...prev,
+      { url: '', isPrimary: prev.length === 0 },
+    ]);
+  };
+
+  const handleSetPrimary = (index: number) => {
+    setImages((prev) =>
+      prev.map((img, i) => ({
+        ...img,
+        isPrimary: i === index,
+      }))
+    );
+  };
+
+  const handleMoveImage = (index: number, direction: -1 | 1) => {
+    setImages((prev) => {
+      const targetIndex = index + direction;
+      if (targetIndex < 0 || targetIndex >= prev.length) return prev;
+      const updated = [...prev];
+      const temp = updated[index];
+      updated[index] = updated[targetIndex];
+      updated[targetIndex] = temp;
+      return updated;
+    });
+  };
+
+  const handleRemoveImage = (index: number) => {
+    setImages((prev) => {
+      const wasPrimary = prev[index]?.isPrimary;
+      const updated = prev.filter((_, i) => i !== index);
+      if (wasPrimary && updated.length > 0) {
+        updated[0].isPrimary = true;
+      }
+      return updated;
+    });
+  };
+
+  const handleUrlChange = (index: number, url: string) => {
+    setImages((prev) => {
+      const updated = [...prev];
+      updated[index] = { ...updated[index], url };
+      return updated;
+    });
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!id) return;
@@ -161,7 +243,18 @@ export const EditProduct: React.FC = () => {
     setIsSubmitting(true);
 
     try {
-      const validImages = imageUrls.filter((u) => u.trim() !== '');
+      const validImages = images.filter((img) => img.url.trim() !== '');
+      let finalImages = validImages.map((img, idx) => ({
+        id: img.id,
+        url: img.url,
+        isPrimary: img.isPrimary,
+        displayOrder: idx + 1,
+      }));
+
+      if (finalImages.length > 0 && !finalImages.some((img) => img.isPrimary)) {
+        finalImages[0].isPrimary = true;
+      }
+
       const validFeatures = features.filter((f) => f.trim() !== '');
       const validSpecs = specifications.filter((s) => s.key.trim() !== '' && s.value.trim() !== '');
 
@@ -180,7 +273,7 @@ export const EditProduct: React.FC = () => {
         capacity: capacity || undefined,
         seoTitle: seoTitle || undefined,
         seoDescription: seoDescription || undefined,
-        images: validImages,
+        images: finalImages,
         features: validFeatures,
         specifications: validSpecs,
       });
@@ -341,45 +434,136 @@ export const EditProduct: React.FC = () => {
           </div>
         </div>
 
-        {/* Images */}
-        <div className="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm space-y-4 text-xs">
-          <div className="flex items-center justify-between border-b border-gray-100 pb-3">
-            <h3 className="text-base font-bold text-slate-900 font-display">Product Image URLs</h3>
-            <button
-              type="button"
-              onClick={() => setImageUrls([...imageUrls, ''])}
-              className="font-bold text-brand-purple flex items-center space-x-1"
-            >
-              <Plus className="w-3.5 h-3.5" />
-              <span>Add Image URL</span>
-            </button>
+        {/* PRODUCT IMAGES UPLOAD & MANAGEMENT */}
+        <div className="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm space-y-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-gray-100 pb-3 gap-2">
+            <div>
+              <h3 className="text-base font-bold text-slate-900 font-display">Product Images</h3>
+              <p className="text-xs text-slate-500">Upload multiple photos, drag/reorder, set primary cover photo.</p>
+            </div>
+            <div className="flex items-center space-x-2">
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                className="px-4 py-2.5 bg-brand-purple text-white text-xs font-bold rounded-xl hover:bg-purple-700 flex items-center space-x-1.5 transition-colors shadow-sm"
+              >
+                <Upload className="w-4 h-4" />
+                <span>Upload Files</span>
+              </button>
+              <button
+                type="button"
+                onClick={handleAddUrlInput}
+                className="px-4 py-2.5 bg-purple-50 text-brand-purple text-xs font-bold rounded-xl hover:bg-purple-100 flex items-center space-x-1.5 transition-colors"
+              >
+                <Plus className="w-4 h-4" />
+                <span>Add URL</span>
+              </button>
+              <input
+                type="file"
+                ref={fileInputRef}
+                accept="image/*"
+                multiple
+                onChange={handleFilesSelected}
+                className="hidden"
+              />
+            </div>
           </div>
 
-          <div className="space-y-3">
-            {imageUrls.map((url, i) => (
-              <div key={i} className="flex items-center space-x-2">
-                <input
-                  type="url"
-                  value={url}
-                  onChange={(e) => {
-                    const updated = [...imageUrls];
-                    updated[i] = e.target.value;
-                    setImageUrls(updated);
-                  }}
-                  className="flex-1 p-3 bg-gray-50 border border-gray-200 rounded-xl"
-                />
-                {imageUrls.length > 1 && (
-                  <button
-                    type="button"
-                    onClick={() => setImageUrls(imageUrls.filter((_, idx) => idx !== i))}
-                    className="p-3 text-red-500 hover:bg-red-50 rounded-xl"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </button>
-                )}
-              </div>
-            ))}
-          </div>
+          {images.length === 0 ? (
+            <div
+              onClick={() => fileInputRef.current?.click()}
+              className="border-2 border-dashed border-gray-200 rounded-2xl p-8 text-center cursor-pointer hover:border-brand-purple hover:bg-purple-50/40 transition-all group"
+            >
+              <Upload className="w-10 h-10 text-gray-400 group-hover:text-brand-purple mx-auto mb-2 transition-colors" />
+              <p className="text-xs font-bold text-slate-700">Click to Upload Product Images</p>
+              <p className="text-[11px] text-slate-400 mt-1">Supports multiple image files or pasting external URLs</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+              {images.map((img, idx) => (
+                <div
+                  key={idx}
+                  className={`relative group bg-gray-50 rounded-2xl border-2 overflow-hidden transition-all duration-200 ${
+                    img.isPrimary
+                      ? 'border-amber-400 ring-2 ring-amber-400/30 shadow-md bg-amber-50/20'
+                      : 'border-gray-200 hover:border-brand-purple'
+                  }`}
+                >
+                  <div className="aspect-square w-full relative bg-gray-100">
+                    <img
+                      src={img.url || 'https://images.unsplash.com/photo-1594787318286-3d835c1d207f?auto=format&fit=crop&q=80&w=400'}
+                      alt={`Product image ${idx + 1}`}
+                      className="w-full h-full object-cover"
+                      onError={(e) => {
+                        (e.target as HTMLImageElement).src =
+                          'https://images.unsplash.com/photo-1594787318286-3d835c1d207f?auto=format&fit=crop&q=80&w=400';
+                      }}
+                    />
+
+                    {/* Primary Badge */}
+                    {img.isPrimary ? (
+                      <span className="absolute top-2 left-2 bg-amber-500 text-white text-[10px] font-black px-2 py-0.5 rounded-full shadow flex items-center space-x-1">
+                        <Star className="w-3 h-3 fill-current" />
+                        <span>PRIMARY</span>
+                      </span>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => handleSetPrimary(idx)}
+                        className="absolute top-2 left-2 bg-black/60 hover:bg-amber-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full opacity-0 group-hover:opacity-100 transition-opacity flex items-center space-x-1"
+                      >
+                        <Star className="w-3 h-3" />
+                        <span>Set Primary</span>
+                      </button>
+                    )}
+
+                    {/* Actions overlay */}
+                    <div className="absolute inset-0 bg-slate-900/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center space-x-1.5">
+                      {idx > 0 && (
+                        <button
+                          type="button"
+                          onClick={() => handleMoveImage(idx, -1)}
+                          title="Move Left"
+                          className="p-1.5 bg-white/90 hover:bg-white text-slate-800 rounded-lg shadow transition-colors"
+                        >
+                          <ArrowLeft className="w-3.5 h-3.5" />
+                        </button>
+                      )}
+                      {idx < images.length - 1 && (
+                        <button
+                          type="button"
+                          onClick={() => handleMoveImage(idx, 1)}
+                          title="Move Right"
+                          className="p-1.5 bg-white/90 hover:bg-white text-slate-800 rounded-lg shadow transition-colors"
+                        >
+                          <ArrowRight className="w-3.5 h-3.5" />
+                        </button>
+                      )}
+                      <button
+                        type="button"
+                        onClick={() => handleRemoveImage(idx)}
+                        title="Remove Image"
+                        className="p-1.5 bg-red-600/90 hover:bg-red-600 text-white rounded-lg shadow transition-colors"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="p-2 bg-white border-t border-gray-100">
+                    <input
+                      type="text"
+                      value={img.url.startsWith('data:') ? 'Local Image File' : img.url}
+                      readOnly={img.url.startsWith('data:')}
+                      onChange={(e) => handleUrlChange(idx, e.target.value)}
+                      placeholder="Paste Image URL"
+                      className="w-full text-[10px] p-1.5 bg-gray-50 border border-gray-200 rounded-lg focus:outline-none font-mono text-slate-600 truncate"
+                    />
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
 
         {/* Toggles */}
