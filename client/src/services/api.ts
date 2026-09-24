@@ -257,12 +257,30 @@ export const api = {
 
   // Admin Categories
   async createCategory(categoryData: Partial<Category>): Promise<Category> {
-    const res = await apiFetch(`${API_BASE_URL}/admin/categories`, {
-      method: 'POST',
-      headers: getAuthHeaders(),
-      body: JSON.stringify(categoryData),
-    });
-    return handleResponse(res);
+    try {
+      const res = await apiFetch(`${API_BASE_URL}/admin/categories`, {
+        method: 'POST',
+        headers: getAuthHeaders(),
+        body: JSON.stringify(categoryData),
+      });
+      if (!res.ok && (res.status === 404 || res.status === 405)) {
+        const fallbackRes = await apiFetch(`${API_BASE_URL}/categories`, {
+          method: 'POST',
+          headers: getAuthHeaders(),
+          body: JSON.stringify(categoryData),
+        });
+        return handleResponse(fallbackRes);
+      }
+      return handleResponse(res);
+    } catch (err: any) {
+      // Fallback request
+      const fallbackRes = await apiFetch(`${API_BASE_URL}/categories`, {
+        method: 'POST',
+        headers: getAuthHeaders(),
+        body: JSON.stringify(categoryData),
+      });
+      return handleResponse(fallbackRes);
+    }
   },
 
   async updateCategory(id: string, categoryData: Partial<Category>): Promise<Category> {
@@ -285,12 +303,29 @@ export const api = {
 
   // Admin Products
   async createProduct(productData: unknown): Promise<Product> {
-    const res = await apiFetch(`${API_BASE_URL}/admin/products`, {
-      method: 'POST',
-      headers: getAuthHeaders(),
-      body: JSON.stringify(productData),
-    });
-    return handleResponse(res);
+    try {
+      const res = await apiFetch(`${API_BASE_URL}/admin/products`, {
+        method: 'POST',
+        headers: getAuthHeaders(),
+        body: JSON.stringify(productData),
+      });
+      if (!res.ok && (res.status === 404 || res.status === 405)) {
+        const fallbackRes = await apiFetch(`${API_BASE_URL}/products`, {
+          method: 'POST',
+          headers: getAuthHeaders(),
+          body: JSON.stringify(productData),
+        });
+        return handleResponse(fallbackRes);
+      }
+      return handleResponse(res);
+    } catch (err: any) {
+      const fallbackRes = await apiFetch(`${API_BASE_URL}/products`, {
+        method: 'POST',
+        headers: getAuthHeaders(),
+        body: JSON.stringify(productData),
+      });
+      return handleResponse(fallbackRes);
+    }
   },
 
   async updateProduct(id: string, productData: unknown): Promise<Product> {

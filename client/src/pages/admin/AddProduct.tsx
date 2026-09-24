@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Save, ArrowLeft, Plus, Trash2 } from 'lucide-react';
+import { Save, ArrowLeft, Plus, Trash2, X, FolderTree } from 'lucide-react';
 import { Category } from '../../types';
 import { api } from '../../services/api';
 
@@ -27,6 +27,15 @@ export const AddProduct: React.FC = () => {
   const [seoTitle, setSeoTitle] = useState('');
   const [seoDescription, setSeoDescription] = useState('');
 
+  // Quick Create Category Modal State
+  const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false);
+  const [newCatName, setNewCatName] = useState('');
+  const [newCatSlug, setNewCatSlug] = useState('');
+  const [newCatDescription, setNewCatDescription] = useState('');
+  const [newCatImage, setNewCatImage] = useState('');
+  const [isCreatingCat, setIsCreatingCat] = useState(false);
+  const [catModalError, setCatModalError] = useState('');
+
   // Dynamic Lists
   const [imageUrls, setImageUrls] = useState<string[]>(['']);
   const [features, setFeatures] = useState<string[]>(['']);
@@ -34,28 +43,79 @@ export const AddProduct: React.FC = () => {
     { key: '', value: '' },
   ]);
 
+  const loadCategories = async () => {
+    try {
+      const data = await api.getCategories(true);
+      const cats = Array.isArray(data) ? data : [];
+      setCategories(cats);
+      return cats;
+    } catch (err) {
+      console.warn('Failed to load categories:', err);
+      setCategories([]);
+      return [];
+    }
+  };
+
   useEffect(() => {
-    const loadCategories = async () => {
-      try {
-        const data = await api.getCategories(true);
-        const cats = Array.isArray(data) ? data : [];
-        setCategories(cats);
-        if (cats.length > 0 && cats[0]?.id) {
-          setCategoryId(cats[0].id);
-        }
-      } catch (err) {
-        console.warn('Failed to load categories:', err);
-        setCategories([]);
+    loadCategories().then((cats) => {
+      if (cats.length > 0 && cats[0]?.id && !categoryId) {
+        setCategoryId(cats[0].id);
       }
-    };
-    loadCategories();
+    });
   }, []);
 
-  // Auto-generate slug when name changes
   const handleNameChange = (val: string) => {
     setName(val);
     if (!slug || slug === val.toLowerCase().replace(/[^\w\s-]/g, '').replace(/[\s_-]+/g, '-')) {
       setSlug(val.toLowerCase().trim().replace(/[^\w\s-]/g, '').replace(/[\s_-]+/g, '-'));
+    }
+  };
+
+  const handleCategorySelectChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const val = e.target.value;
+    if (val === '__create_new__') {
+      setIsCategoryModalOpen(true);
+      setCatModalError('');
+    } else {
+      setCategoryId(val);
+    }
+  };
+
+  const handleCreateNewCategory = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setCatModalError('');
+
+    if (!newCatName.trim()) {
+      setCatModalError('Category Name is required.');
+      return;
+    }
+
+    try {
+      setIsCreatingCat(true);
+      const created = await api.createCategory({
+        name: newCatName.trim(),
+        slug: newCatSlug.trim() || undefined,
+        description: newCatDescription.trim() || undefined,
+        image: newCatImage.trim() || undefined,
+        active: true,
+      });
+
+      const updatedCats = await loadCategories();
+      const targetId = created?.id || updatedCats.find((c) => c.name.toLowerCase() === newCatName.trim().toLowerCase())?.id;
+      if (targetId) {
+        setCategoryId(targetId);
+      }
+
+      // Reset modal inputs
+      setNewCatName('');
+      setNewCatSlug('');
+      setNewCatDescription('');
+      setNewCatImage('');
+      setIsCategoryModalOpen(false);
+    } catch (err: any) {
+      setCatModalError(err.message || 'Failed to create category.');
+    } finally {
+      setIsCreatingCat(false);
     }
   };
 
@@ -104,7 +164,7 @@ export const AddProduct: React.FC = () => {
   };
 
   return (
-    <div className="max-w-4xl mx-auto space-y-6">
+    <div className="max-w-4xl mx-auto space-y-6 pb-12">
       {/* Top Header */}
       <div className="flex items-center justify-between bg-white p-6 rounded-3xl border border-gray-100 shadow-sm">
         <div className="flex items-center space-x-3">
@@ -176,8 +236,8 @@ export const AddProduct: React.FC = () => {
               <select
                 required
                 value={categoryId}
-                onChange={(e) => setCategoryId(e.target.value)}
-                className="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-purple font-semibold"
+                onChange={handleCategorySelectChange}
+                className="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-purple font-semibold text-slate-800"
               >
                 <option value="" disabled>Select Category</option>
                 {categories.map((c) => (
@@ -185,6 +245,9 @@ export const AddProduct: React.FC = () => {
                     {c.name}
                   </option>
                 ))}
+                <option value="__create_new__" className="font-bold text-brand-purple bg-purple-50">
+                  + Create New Category
+                </option>
               </select>
             </div>
           </div>
@@ -293,7 +356,7 @@ export const AddProduct: React.FC = () => {
           </div>
         </div>
 
-        {/* Specifications & Attributes */}
+        {/* Attributes */}
         <div className="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm space-y-4 text-xs">
           <h3 className="text-base font-bold text-slate-900 border-b border-gray-100 pb-3 font-display">
             Attributes & Specifications
@@ -358,8 +421,103 @@ export const AddProduct: React.FC = () => {
             <span>{isSubmitting ? 'Saving Product...' : 'SAVE & PUBLISH PRODUCT'}</span>
           </button>
         </div>
-
       </form>
+
+      {/* QUICK CREATE CATEGORY MODAL */}
+      {isCategoryModalOpen && (
+        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl p-6 sm:p-8 max-w-lg w-full space-y-6 shadow-2xl animate-in zoom-in-95 duration-200">
+            <div className="flex items-center justify-between border-b border-gray-100 pb-4">
+              <h3 className="text-xl font-black text-slate-900 font-display flex items-center space-x-2">
+                <FolderTree className="w-5 h-5 text-brand-purple" />
+                <span>Create New Category</span>
+              </h3>
+              <button
+                type="button"
+                onClick={() => setIsCategoryModalOpen(false)}
+                className="p-2 text-slate-400 hover:text-slate-700 rounded-xl"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {catModalError && (
+              <div className="bg-red-50 text-red-700 p-3 rounded-xl text-xs font-semibold">
+                {catModalError}
+              </div>
+            )}
+
+            <form onSubmit={handleCreateNewCategory} className="space-y-4 text-xs">
+              <div>
+                <label className="block font-bold text-slate-700 mb-1">Category Name *</label>
+                <input
+                  type="text"
+                  required
+                  value={newCatName}
+                  onChange={(e) => {
+                    setNewCatName(e.target.value);
+                    if (!newCatSlug) {
+                      setNewCatSlug(e.target.value.toLowerCase().trim().replace(/[^\w\s-]/g, '').replace(/[\s_-]+/g, '-'));
+                    }
+                  }}
+                  placeholder="e.g. Electric Ride-On Bikes"
+                  className="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-purple"
+                />
+              </div>
+
+              <div>
+                <label className="block font-bold text-slate-700 mb-1">Slug (URL Identifier)</label>
+                <input
+                  type="text"
+                  value={newCatSlug}
+                  onChange={(e) => setNewCatSlug(e.target.value)}
+                  placeholder="electric-ride-on-bikes"
+                  className="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none"
+                />
+              </div>
+
+              <div>
+                <label className="block font-bold text-slate-700 mb-1">Description</label>
+                <textarea
+                  rows={2}
+                  value={newCatDescription}
+                  onChange={(e) => setNewCatDescription(e.target.value)}
+                  placeholder="Category summary..."
+                  className="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none"
+                />
+              </div>
+
+              <div>
+                <label className="block font-bold text-slate-700 mb-1">Banner Image URL</label>
+                <input
+                  type="url"
+                  value={newCatImage}
+                  onChange={(e) => setNewCatImage(e.target.value)}
+                  placeholder="https://images.unsplash.com/..."
+                  className="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none"
+                />
+              </div>
+
+              <div className="pt-4 border-t border-gray-100 flex justify-end space-x-3">
+                <button
+                  type="button"
+                  onClick={() => setIsCategoryModalOpen(false)}
+                  className="px-5 py-3 rounded-xl bg-gray-100 text-slate-700 font-bold hover:bg-gray-200"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={isCreatingCat}
+                  className="px-6 py-3 rounded-xl bg-brand-purple text-white font-bold hover:bg-purple-700 shadow"
+                >
+                  {isCreatingCat ? 'Creating Category...' : 'Save & Select Category'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
