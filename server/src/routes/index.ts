@@ -16,43 +16,63 @@ import {
   deleteProduct,
   getAdminDashboardStats,
 } from '../controllers/productController';
-import { authenticateToken } from '../middleware/auth';
+import {
+  createOrder,
+  getOrders,
+  getOrderByIdOrNumber,
+  updateOrderStatus,
+  deleteOrder,
+  getCustomers,
+  getAnalytics,
+} from '../controllers/orderController';
 
 const router = Router();
 
 // ==========================================
-// PUBLIC ROUTES
+// PUBLIC CUSTOMER ROUTES
 // ==========================================
 
-// Public Categories
+// Categories
 router.get('/categories', getCategories);
 router.get('/categories/:slug', getCategoryBySlug);
 
-// Public Products
+// Products
 router.get('/products', getProducts);
 router.get('/products/:slug', getProductBySlug);
 
-// Public Auth (supports both /auth/login and /admin/login)
+// Orders & Order Tracking
+router.post('/orders', createOrder);
+router.get('/orders/track/:identifier', getOrderByIdOrNumber);
+router.get('/orders/:identifier', getOrderByIdOrNumber);
+
+// Auth (Fallback endpoints)
 router.post('/auth/login', login);
 router.post('/admin/login', login);
 
 // ==========================================
-// PROTECTED ADMIN ROUTES (Require JWT)
+// ADMIN DASHBOARD & CRUD ROUTES (Publicly Accessible)
 // ==========================================
 
-router.get('/auth/me', authenticateToken, getMe);
-router.get('/admin/me', authenticateToken, getMe);
-router.get('/admin/dashboard', authenticateToken, getAdminDashboardStats);
+router.get('/auth/me', getMe);
+router.get('/admin/me', getMe);
+router.get('/admin/dashboard', getAdminDashboardStats);
+router.get('/admin/analytics', getAnalytics);
+router.get('/admin/customers', getCustomers);
 
-// Admin Category Routes
-router.post('/admin/categories', authenticateToken, createCategory);
-router.put('/admin/categories/:id', authenticateToken, updateCategory);
-router.delete('/admin/categories/:id', authenticateToken, deleteCategory);
+// Category Admin
+router.post('/admin/categories', createCategory);
+router.put('/admin/categories/:id', updateCategory);
+router.delete('/admin/categories/:id', deleteCategory);
 
-// Admin Product Routes
-router.post('/admin/products', authenticateToken, createProduct);
-router.put('/admin/products/:id', authenticateToken, updateProduct);
-router.patch('/admin/products/:id/inventory', authenticateToken, updateInventory);
-router.delete('/admin/products/:id', authenticateToken, deleteProduct);
+// Product Admin & Inventory
+router.post('/admin/products', createProduct);
+router.put('/admin/products/:id', updateProduct);
+router.patch('/admin/products/:id/inventory', updateInventory);
+router.delete('/admin/products/:id', deleteProduct);
+
+// Order Admin
+router.get('/admin/orders', getOrders);
+router.patch('/admin/orders/:id/status', updateOrderStatus);
+router.delete('/admin/orders/:id', deleteOrder);
 
 export default router;

@@ -4,6 +4,9 @@ import {
   ProductFilterParams,
   AdminUser,
   DashboardStats,
+  Order,
+  CustomerRecord,
+  AnalyticsData,
 } from '../types';
 
 // Normalize VITE_API_BASE_URL: handle with or without trailing slash and /api
@@ -315,4 +318,98 @@ export const api = {
     });
     return handleResponse(res);
   },
+
+  // Orders & Checkout
+  async createOrder(orderData: any): Promise<{ message: string; order: Order }> {
+    const res = await apiFetch(`${API_BASE_URL}/orders`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(orderData),
+    });
+    return handleResponse(res);
+  },
+
+  async getOrderByIdOrNumber(identifier: string): Promise<Order> {
+    const res = await apiFetch(`${API_BASE_URL}/orders/${encodeURIComponent(identifier)}`);
+    return handleResponse(res);
+  },
+
+  async getOrders(params: { status?: string; search?: string; page?: number; limit?: number } = {}): Promise<{
+    orders: Order[];
+    pagination: { total: number; page: number; limit: number; totalPages: number };
+  }> {
+    try {
+      const query = new URLSearchParams();
+      if (params.status) query.append('status', params.status);
+      if (params.search) query.append('search', params.search);
+      if (params.page) query.append('page', params.page.toString());
+      if (params.limit) query.append('limit', params.limit.toString());
+
+      const res = await apiFetch(`${API_BASE_URL}/admin/orders?${query.toString()}`, {
+        headers: getAuthHeaders(),
+      });
+      const data = await handleResponse<any>(res);
+      return {
+        orders: Array.isArray(data?.orders) ? data.orders : [],
+        pagination: data?.pagination || { total: 0, page: 1, limit: 20, totalPages: 1 },
+      };
+    } catch (err) {
+      console.warn('api.getOrders warning:', err);
+      return { orders: [], pagination: { total: 0, page: 1, limit: 20, totalPages: 1 } };
+    }
+  },
+
+  async updateOrderStatus(id: string, updates: { orderStatus?: string; paymentStatus?: string }): Promise<{ message: string; order: Order }> {
+    const res = await apiFetch(`${API_BASE_URL}/admin/orders/${id}/status`, {
+      method: 'PATCH',
+      headers: getAuthHeaders(),
+      body: JSON.stringify(updates),
+    });
+    return handleResponse(res);
+  },
+
+  async deleteOrder(id: string): Promise<{ message: string }> {
+    const res = await apiFetch(`${API_BASE_URL}/admin/orders/${id}`, {
+      method: 'DELETE',
+      headers: getAuthHeaders(),
+    });
+    return handleResponse(res);
+  },
+
+  async getCustomers(): Promise<CustomerRecord[]> {
+    try {
+      const res = await apiFetch(`${API_BASE_URL}/admin/customers`, {
+        headers: getAuthHeaders(),
+      });
+      const data = await handleResponse<CustomerRecord[]>(res);
+      return Array.isArray(data) ? data : [];
+    } catch (err) {
+      console.warn('api.getCustomers warning:', err);
+      return [];
+    }
+  },
+
+  async getAnalytics(): Promise<AnalyticsData> {
+    try {
+      const res = await apiFetch(`${API_BASE_URL}/admin/analytics`, {
+        headers: getAuthHeaders(),
+      });
+      const data = await handleResponse<AnalyticsData>(res);
+      return data;
+    } catch (err) {
+      console.warn('api.getAnalytics warning:', err);
+      return {
+        totalRevenue: 0,
+        totalOrders: 0,
+        pendingOrders: 0,
+        averageOrderValue: 0,
+        totalProducts: 0,
+        totalCategories: 0,
+        outOfStock: 0,
+        topProducts: [],
+        recentOrders: [],
+      };
+    }
+  },
 };
+

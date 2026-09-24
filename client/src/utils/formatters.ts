@@ -1,4 +1,4 @@
-import { Product } from '../types';
+import { Product, Order } from '../types';
 
 /**
  * Format currency strictly in Indian Rupees (INR / ₹)
@@ -22,12 +22,11 @@ export const calculateDiscount = (mrp: number, salePrice: number): number => {
 
 /**
  * Generate dynamic WhatsApp link for product enquiry / order
- * Uses window.location.origin dynamically (works on localhost, Vercel, or custom domains)
  */
 export const generateWhatsAppProductUrl = (product: Product): string => {
   const whatsappNumber = import.meta.env.VITE_WHATSAPP_NUMBER || '919495902904';
   
-  const currentDomain = typeof window !== 'undefined' ? window.location.origin : 'https://kingday.store';
+  const currentDomain = typeof window !== 'undefined' ? window.location.origin : 'https://www.king-day.shop';
   const productUrl = `${currentDomain}/product/${product.slug}`;
   const formattedPrice = formatINR(product.salePrice);
 
@@ -35,21 +34,50 @@ export const generateWhatsAppProductUrl = (product: Product): string => {
 
 I am interested in this product:
 
-Product: ${product.name}
+🛒 Product: ${product.name}
+🏷️ SKU: ${product.sku}
+💰 Price: ${formattedPrice}
 
-SKU: ${product.sku}
+🔗 Link: ${productUrl}
 
-Price: ${formattedPrice}
+Please confirm stock availability and shipping details. Thank you!`;
 
-Product URL:
-${productUrl}
+  return `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(message)}`;
+};
 
-Please share availability and delivery details.
+/**
+ * Generate dynamic WhatsApp link for full Order confirmation
+ */
+export const generateWhatsAppOrderUrl = (order: Order): string => {
+  const whatsappNumber = import.meta.env.VITE_WHATSAPP_NUMBER || '919495902904';
+  const currentDomain = typeof window !== 'undefined' ? window.location.origin : 'https://www.king-day.shop';
+  const trackingUrl = `${currentDomain}/track-order?id=${order.orderNumber}`;
 
-Thank you.`;
+  const itemList = order.items
+    .map((item, idx) => `${idx + 1}. ${item.productName} (x${item.quantity}) - ${formatINR(item.total)}`)
+    .join('\n');
 
-  const encodedMessage = encodeURIComponent(message);
-  return `https://wa.me/${whatsappNumber}?text=${encodedMessage}`;
+  const message = `Hello KING DAY,
+
+I have placed a new order on the website!
+
+🆔 Order ID: ${order.orderNumber}
+👤 Customer: ${order.customerName}
+📞 Phone: ${order.phone}
+📍 Address: ${order.address}${order.apartment ? `, ${order.apartment}` : ''}, ${order.city}, ${order.state} - ${order.pincode}
+
+🛍️ ITEMS ORDERED:
+${itemList}
+
+💵 Subtotal: ${formatINR(order.subtotal)}
+🚚 Shipping: ${order.shipping === 0 ? 'FREE' : formatINR(order.shipping)}
+💰 TOTAL AMOUNT: ${formatINR(order.total)}
+
+🔍 Track Order: ${trackingUrl}
+
+Please confirm my order and send payment/delivery instructions. Thank you!`;
+
+  return `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(message)}`;
 };
 
 /**
@@ -57,7 +85,7 @@ Thank you.`;
  */
 export const generateGeneralWhatsAppUrl = (customText?: string): string => {
   const whatsappNumber = import.meta.env.VITE_WHATSAPP_NUMBER || '919495902904';
-  const defaultMsg = 'Hello KING DAY! I have an enquiry regarding kids products.';
+  const defaultMsg = 'Hello KING DAY! I have an enquiry regarding kids ride-on cars, toys & bicycles.';
   const text = encodeURIComponent(customText || defaultMsg);
   return `https://wa.me/${whatsappNumber}?text=${text}`;
 };
