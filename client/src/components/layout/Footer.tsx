@@ -151,12 +151,7 @@ export const Footer: React.FC = () => {
                 <strong className="text-white">Ordering System:</strong> Instant WhatsApp Confirmation
               </p>
               <div className="pt-2 border-t border-slate-800">
-                <Link
-                  to="/admin/login"
-                  className="text-slate-400 hover:text-white text-xs underline underline-offset-2"
-                >
-                  Admin Portal Access
-                </Link>
+                <Link to="/admin" className="text-slate-400 hover:text-white text-xs underline underline-offset-2">Admin Dashboard</Link>
               </div>
             </div>
           </div>

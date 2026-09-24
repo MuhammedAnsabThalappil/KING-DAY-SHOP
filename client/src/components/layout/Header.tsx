@@ -63,8 +63,8 @@ export const Header: React.FC = () => {
               <Phone className="w-3.5 h-3.5" />
               <span>WhatsApp: +91 9495902904</span>
             </a>
-            <Link to="/admin/login" className="text-gray-300 hover:text-white text-xs underline underline-offset-2">
-              Admin Login
+            <Link to="/admin" className="text-gray-300 hover:text-white text-xs underline underline-offset-2">
+              Admin Dashboard
             </Link>
           </div>
         </div>

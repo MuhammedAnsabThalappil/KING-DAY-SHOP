@@ -4,29 +4,26 @@ import bcrypt from 'bcryptjs';
 const prisma = new PrismaClient();
 
 async function main() {
-  console.log('🌱 Starting KING DAY database seeding...');
+  console.log('🌱 Starting KING DAY database seeding (safe/idempotent)...');
 
-  // Clean existing records
-  await prisma.productFeature.deleteMany();
-  await prisma.productSpecification.deleteMany();
-  await prisma.productImage.deleteMany();
-  await prisma.product.deleteMany();
-  await prisma.category.deleteMany();
-  await prisma.user.deleteMany();
-
-  // Create Admin User
+  // Upsert Admin User (Safe & Non-Destructive)
   const hashedPassword = await bcrypt.hash('ADMIN123', 10);
-  const adminUser = await prisma.user.create({
-    data: {
+  const adminUser = await prisma.user.upsert({
+    where: { email: 'admin@kingday.store' },
+    update: {
+      password: hashedPassword,
+      role: 'ADMIN',
+    },
+    create: {
       email: 'admin@kingday.store',
       password: hashedPassword,
       name: 'KING DAY Admin',
       role: 'ADMIN',
     },
   });
-  console.log(`👤 Admin created: ${adminUser.email}`);
+  console.log(`👤 Admin verified/upserted: ${adminUser.email}`);
 
-  // Create Categories
+  // Create Categories (if not already existing)
   const categories = [
     {
       name: 'Kids Ride-On',
@@ -64,9 +61,14 @@ async function main() {
 
   const createdCategories: Record<string, any> = {};
   for (const cat of categories) {
-    const createdCat = await prisma.category.create({ data: cat });
-    createdCategories[cat.slug] = createdCat;
-    console.log(`📁 Category created: ${createdCat.name}`);
+    const existingCat = await prisma.category.findUnique({ where: { slug: cat.slug } });
+    if (!existingCat) {
+      const createdCat = await prisma.category.create({ data: cat });
+      createdCategories[cat.slug] = createdCat;
+      console.log(`📁 Category created: ${createdCat.name}`);
+    } else {
+      createdCategories[cat.slug] = existingCat;
+    }
   }
 
   // Create Products
@@ -346,22 +348,27 @@ async function main() {
   ];
 
   for (const item of productsData) {
-    const { images, features, specifications, ...productInfo } = item;
-    const createdProduct = await prisma.product.create({
-      data: {
-        ...productInfo,
-        images: {
-          create: images,
+    const existingProduct = await prisma.product.findUnique({ where: { slug: item.slug } });
+    if (!existingProduct) {
+      const { images, features, specifications, ...productInfo } = item;
+      const createdProduct = await prisma.product.create({
+        data: {
+          ...productInfo,
+          images: {
+            create: images,
+          },
+          features: {
+            create: features.map((f) => ({ feature: f })),
+          },
+          specifications: {
+            create: specifications,
+          },
         },
-        features: {
-          create: features.map((f) => ({ feature: f })),
-        },
-        specifications: {
-          create: specifications,
-        },
-      },
-    });
-    console.log(`📦 Product created: ${createdProduct.name} (₹${createdProduct.salePrice})`);
+      });
+      console.log(`📦 Product created: ${createdProduct.name} (₹${createdProduct.salePrice})`);
+    } else {
+      console.log(`📦 Product already exists: ${existingProduct.name}`);
+    }
   }
 
   console.log('✅ KING DAY Seeding completed successfully!');

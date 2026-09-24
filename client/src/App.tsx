@@ -17,7 +17,7 @@ import { About } from './pages/About';
 import { Contact } from './pages/Contact';
 
 // Admin Pages
-import { AdminLogin } from './pages/admin/Login';
+// import { AdminLogin } from './pages/admin/Login';
 import { AdminDashboard } from './pages/admin/Dashboard';
 import { AdminProducts } from './pages/admin/Products';
 import { AddProduct } from './pages/admin/AddProduct';
@@ -27,20 +27,7 @@ import { AdminInventory } from './pages/admin/Inventory';
 
 // Protected Route Component for Admin Routes
 const ProtectedAdminRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const { isAuthenticated, isLoading } = useAuth();
-
-  if (isLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50 text-slate-500 font-bold text-sm">
-        Authenticating Admin Session...
-      </div>
-    );
-  }
-
-  if (!isAuthenticated) {
-    return <Navigate to="/admin/login" replace />;
-  }
-
+  // Authentication removed – all admin routes are publicly accessible
   return <>{children}</>;
 };
 
@@ -137,7 +124,7 @@ export const App: React.FC = () => {
             <Route path="/contact" element={<Contact />} />
 
             {/* Admin Routes */}
-            <Route path="/admin/login" element={<AdminLogin />} />
+            <Route path="/admin/login" element={<Navigate to="/admin" replace />} />
 
             <Route
               path="/admin"

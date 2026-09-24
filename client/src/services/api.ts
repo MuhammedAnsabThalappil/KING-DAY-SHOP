@@ -6,7 +6,10 @@ import {
   DashboardStats,
 } from '../types';
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api';
+// Normalize VITE_API_BASE_URL: handle with or without trailing slash and /api
+const rawBaseUrl = import.meta.env.VITE_API_BASE_URL ? String(import.meta.env.VITE_API_BASE_URL).trim() : '';
+const cleanBaseUrl = rawBaseUrl.replace(/\/+$/, '').replace(/\/api$/, '');
+const API_BASE_URL = cleanBaseUrl ? `${cleanBaseUrl}/api` : '/api';
 
 const getAuthHeaders = (): HeadersInit => {
   const token = localStorage.getItem('kingday_admin_token');
@@ -204,7 +207,7 @@ export const api = {
     token: string;
     user: AdminUser;
   }> {
-    const res = await apiFetch(`${API_BASE_URL}/admin/login`, {
+    const res = await apiFetch(`${API_BASE_URL}/auth/login`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(credentials),
@@ -213,7 +216,7 @@ export const api = {
   },
 
   async getAdminMe(): Promise<{ user: AdminUser }> {
-    const res = await apiFetch(`${API_BASE_URL}/admin/me`, {
+    const res = await apiFetch(`${API_BASE_URL}/auth/me`, {
       headers: getAuthHeaders(),
     });
     return handleResponse(res);

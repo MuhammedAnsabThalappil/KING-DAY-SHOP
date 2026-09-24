@@ -32,13 +32,15 @@ router.get('/categories/:slug', getCategoryBySlug);
 router.get('/products', getProducts);
 router.get('/products/:slug', getProductBySlug);
 
-// Public Admin Auth
+// Public Auth (supports both /auth/login and /admin/login)
+router.post('/auth/login', login);
 router.post('/admin/login', login);
 
 // ==========================================
 // PROTECTED ADMIN ROUTES (Require JWT)
 // ==========================================
 
+router.get('/auth/me', authenticateToken, getMe);
 router.get('/admin/me', authenticateToken, getMe);
 router.get('/admin/dashboard', authenticateToken, getAdminDashboardStats);
 
