@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Sparkles, Phone, ArrowRight, ShieldCheck, ChevronRight, Zap, RefreshCw, Truck, Heart, ShoppingBag, Star, Award } from 'lucide-react';
+import { Sparkles, Phone, ArrowRight, ShieldCheck, ChevronRight, Zap, RefreshCw, Truck, Heart, ShoppingBag, Star, Award, CheckCircle2 } from 'lucide-react';
 import { Category, Product } from '../types';
 import { api } from '../services/api';
 import { ProductCard } from '../components/product/ProductCard';
-import { ProductCardSkeleton, CategoryCardSkeleton } from '../components/ui/SkeletonLoader';
+import { ProductCardSkeleton } from '../components/ui/SkeletonLoader';
 import { generateGeneralWhatsAppUrl } from '../utils/formatters';
 
 export const Home: React.FC = () => {
@@ -13,11 +13,9 @@ export const Home: React.FC = () => {
   const [newArrivals, setNewArrivals] = useState<Product[]>([]);
   const [rideOnProducts, setRideOnProducts] = useState<Product[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [hasError, setHasError] = useState(false);
 
   const loadHomeData = async () => {
     setIsLoading(true);
-    setHasError(false);
     try {
       const [catData, featuredData, newestData, rideOnData] = await Promise.all([
         api.getCategories(),
@@ -31,7 +29,6 @@ export const Home: React.FC = () => {
       setRideOnProducts(Array.isArray(rideOnData?.products) ? rideOnData.products : []);
     } catch (err) {
       console.error('Failed to load homepage data:', err);
-      setHasError(true);
     } finally {
       setIsLoading(false);
     }
@@ -42,37 +39,48 @@ export const Home: React.FC = () => {
   }, []);
 
   return (
-    <div className="space-y-16 pb-16">
-      {/* 1. HERO SECTION */}
-      <section className="relative overflow-hidden bg-slate-900 text-white py-16 lg:py-24 rounded-b-3xl shadow-xl">
-        <div className="absolute inset-0 bg-hero-gradient pointer-events-none" />
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
-            {/* Hero Left */}
-            <div className="space-y-6 text-center lg:text-left">
-              <div className="inline-flex items-center space-x-2 bg-white/10 backdrop-blur-md px-4 py-2 rounded-full border border-white/20 text-brand-yellow font-bold text-xs uppercase tracking-widest shadow-inner">
-                <Sparkles className="w-4 h-4 text-brand-yellow" />
-                <span>KING DAY • Fun • Quality • Happiness</span>
-              </div>
+    <div className="space-y-10 sm:space-y-14 pb-16">
+      
+      {/* 1. HERO BANNER matching Design Reference */}
+      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-4">
+        <div className="bg-gradient-to-r from-sky-100 via-purple-50 to-pink-100 rounded-3xl p-6 sm:p-10 lg:p-12 border border-slate-200/80 shadow-md relative overflow-hidden">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-center">
+            
+            <div className="space-y-5 text-center lg:text-left z-10">
+              <span className="inline-block bg-white text-slate-800 text-xs font-black px-3.5 py-1 rounded-full shadow-sm">
+                👑 Premium Kids Ride-Ons, Toys, Cycles & More
+              </span>
 
-              <h1 className="text-4xl sm:text-5xl lg:text-6xl font-black tracking-tight leading-tight font-display">
-                Make Every Ride <br className="hidden sm:inline" />
-                <span className="text-gradient">
-                  More Fun & Unforgettable
+              <h1 className="text-3xl sm:text-5xl lg:text-6xl font-black text-slate-900 tracking-tight leading-tight font-display">
+                Make Every Ride a <br />
+                <span className="text-amber-500 underline decoration-amber-300 decoration-wavy decoration-2">
+                  Happier Day!
                 </span>
               </h1>
 
-              <p className="text-slate-300 text-base sm:text-lg max-w-xl mx-auto lg:mx-0 font-normal leading-relaxed">
-                Discover Kerala's premier store for kids electric ride-on cars, 4x4 jeeps, RC toys, bicycles, and baby care accessories. Quality tested for safety and endless smiles.
-              </p>
+              {/* Value Badges Pills */}
+              <div className="flex flex-wrap justify-center lg:justify-start gap-2 pt-1 text-xs font-bold text-slate-700">
+                <span className="bg-white px-3 py-1.5 rounded-full shadow-sm flex items-center space-x-1">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-500" />
+                  <span>Safe & Durable</span>
+                </span>
+                <span className="bg-white px-3 py-1.5 rounded-full shadow-sm flex items-center space-x-1">
+                  <Star className="w-4 h-4 text-amber-500 fill-current" />
+                  <span>Best Prices</span>
+                </span>
+                <span className="bg-white px-3 py-1.5 rounded-full shadow-sm flex items-center space-x-1">
+                  <Truck className="w-4 h-4 text-sky-500" />
+                  <span>All Kerala Delivery</span>
+                </span>
+              </div>
 
-              {/* Action Buttons */}
-              <div className="flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-4 pt-2">
+              {/* Action CTA Button */}
+              <div className="pt-3 flex flex-col sm:flex-row justify-center lg:justify-start gap-3">
                 <Link
                   to="/shop"
-                  className="w-full sm:w-auto inline-flex items-center justify-center space-x-2 bg-brand-gradient text-white font-black px-8 py-4 rounded-full text-base shadow-lg hover:shadow-purple-500/25 transition-all transform hover:-translate-y-0.5 active:translate-y-0 min-h-[50px]"
+                  className="inline-flex items-center justify-center space-x-2 bg-amber-400 hover:bg-amber-500 text-slate-900 font-black px-8 py-4 rounded-full text-base shadow-lg transition-all transform hover:-translate-y-0.5 min-h-[48px]"
                 >
-                  <span>EXPLORE CATALOGUE</span>
+                  <span>Shop Now</span>
                   <ArrowRight className="w-5 h-5" />
                 </Link>
 
@@ -80,182 +88,129 @@ export const Home: React.FC = () => {
                   href={generateGeneralWhatsAppUrl()}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="w-full sm:w-auto inline-flex items-center justify-center space-x-2 bg-emerald-600 hover:bg-emerald-500 text-white font-black px-8 py-4 rounded-full text-base shadow-lg transition-all transform hover:-translate-y-0.5 active:translate-y-0 min-h-[50px]"
+                  className="inline-flex items-center justify-center space-x-2 bg-emerald-600 hover:bg-emerald-700 text-white font-black px-6 py-4 rounded-full text-base shadow-lg transition-all min-h-[48px]"
                 >
-                  <Phone className="w-5 h-5 fill-current" />
-                  <span>WHATSAPP ORDER</span>
+                  <Phone className="w-4 h-4 fill-current" />
+                  <span>Order on WhatsApp</span>
                 </a>
               </div>
-
-              {/* Mini Features Banner */}
-              <div className="pt-6 border-t border-white/10 grid grid-cols-3 gap-2 text-center text-xs text-slate-300">
-                <div>
-                  <strong className="block text-white font-bold text-sm">100% Quality</strong>
-                  <span>Certified & Safe</span>
-                </div>
-                <div>
-                  <strong className="block text-white font-bold text-sm">Kerala Dispatch</strong>
-                  <span>Quick Shipping</span>
-                </div>
-                <div>
-                  <strong className="block text-white font-bold text-sm">WhatsApp Orders</strong>
-                  <span>Instant Support</span>
-                </div>
-              </div>
             </div>
 
-            {/* Hero Right Visual */}
-            <div className="relative">
-              <div className="relative mx-auto max-w-md lg:max-w-none aspect-square rounded-3xl overflow-hidden border-4 border-white/20 shadow-2xl group">
+            {/* Right Hero Image */}
+            <div className="relative flex justify-center lg:justify-end">
+              <div className="relative w-full max-w-md aspect-4/3 rounded-3xl overflow-hidden shadow-2xl border-4 border-white">
                 <img
                   src="https://images.unsplash.com/photo-1594787318286-3d835c1d207f?auto=format&fit=crop&q=80&w=1000"
-                  alt="Electric Ride-On Car"
-                  className="w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-700"
+                  alt="Red Electric 4x4 Jeep"
+                  className="w-full h-full object-cover"
                 />
-                <div className="absolute inset-0 bg-gradient-to-t from-slate-950/85 via-slate-950/20 to-transparent flex flex-col justify-end p-6">
-                  <span className="bg-brand-pink text-white text-xs font-black px-3 py-1 rounded-full uppercase tracking-wider w-fit mb-2">
-                    🔥 BESTSELLER RIDE-ON
-                  </span>
-                  <h3 className="text-2xl font-black text-white font-display">Mercedes Benz 12V 4x4 Electric Jeep</h3>
-                  <p className="text-xs text-brand-yellow font-bold mt-1">Dual Motors • Parent Bluetooth Remote • Suspension</p>
-                </div>
               </div>
             </div>
           </div>
         </div>
       </section>
 
-      {/* 2. PROMO GRID BANNERS */}
+      {/* 2. CATEGORY CIRCLES SECTION */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <div className="bg-gradient-to-br from-purple-900 to-indigo-950 rounded-3xl p-6 text-white shadow-lg relative overflow-hidden flex flex-col justify-between group">
-            <div className="relative z-10 space-y-2">
-              <span className="text-[10px] font-black uppercase tracking-widest bg-white/20 px-2.5 py-1 rounded-full text-brand-yellow">SUPER SAVINGS</span>
-              <h3 className="text-2xl font-black font-display leading-tight">Kids Electric Ride-Ons</h3>
-              <p className="text-xs text-purple-200">Cars, Jeeps, Superbikes & ATVs with remote control</p>
-            </div>
-            <Link to="/category/kids-ride-on" className="mt-6 inline-flex items-center text-xs font-black text-brand-yellow group-hover:underline">
-              <span>EXPLORE RIDE-ONS →</span>
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 sm:gap-6">
+          {categories.slice(0, 4).map((cat) => (
+            <Link
+              key={cat.id || cat.slug}
+              to={`/category/${cat.slug}`}
+              className="bg-white p-4 rounded-3xl border border-slate-200 shadow-sm hover:shadow-xl hover:border-amber-400 transition-all flex flex-col items-center text-center group"
+            >
+              <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-full overflow-hidden bg-slate-100 mb-3 border-2 border-slate-100 group-hover:border-amber-400 group-hover:scale-105 transition-all">
+                <img
+                  src={cat.image || 'https://images.unsplash.com/photo-1594787318286-3d835c1d207f?auto=format&fit=crop&q=80&w=300'}
+                  alt={cat.name}
+                  className="w-full h-full object-cover"
+                />
+              </div>
+              <h3 className="font-extrabold text-xs sm:text-sm text-slate-900 group-hover:text-amber-600 font-display">
+                {cat.name}
+              </h3>
             </Link>
-          </div>
-
-          <div className="bg-gradient-to-br from-pink-600 to-rose-900 rounded-3xl p-6 text-white shadow-lg relative overflow-hidden flex flex-col justify-between group">
-            <div className="relative z-10 space-y-2">
-              <span className="text-[10px] font-black uppercase tracking-widest bg-white/20 px-2.5 py-1 rounded-full text-white">FUN & LEARNING</span>
-              <h3 className="text-2xl font-black font-display leading-tight">Educational & RC Toys</h3>
-              <p className="text-xs text-rose-100">STEM building kits, remote helicopters & dolls</p>
-            </div>
-            <Link to="/category/kids-toys" className="mt-6 inline-flex items-center text-xs font-black text-white group-hover:underline">
-              <span>EXPLORE TOYS →</span>
-            </Link>
-          </div>
-
-          <div className="bg-gradient-to-br from-blue-900 to-cyan-950 rounded-3xl p-6 text-white shadow-lg relative overflow-hidden flex flex-col justify-between group">
-            <div className="relative z-10 space-y-2">
-              <span className="text-[10px] font-black uppercase tracking-widest bg-white/20 px-2.5 py-1 rounded-full text-brand-yellow">ACTIVE PLAY</span>
-              <h3 className="text-2xl font-black font-display leading-tight">Bicycles & Tricycles</h3>
-              <p className="text-xs text-cyan-200">Balance bikes, training wheels & sturdy helmets</p>
-            </div>
-            <Link to="/category/cycles" className="mt-6 inline-flex items-center text-xs font-black text-brand-yellow group-hover:underline">
-              <span>EXPLORE CYCLES →</span>
-            </Link>
-          </div>
+          ))}
         </div>
       </section>
 
-      {/* 3. SHOP BY CATEGORY */}
+      {/* 3. PROMOTIONAL BANNERS matching Design Reference */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex flex-col md:flex-row md:items-end justify-between mb-8">
-          <div>
-            <span className="text-xs font-bold text-brand-purple uppercase tracking-widest">
-              Explore Our Collections
-            </span>
-            <h2 className="text-3xl font-black text-slate-900 tracking-tight font-display mt-1">
-              Shop by Category
-            </h2>
-          </div>
-          <Link
-            to="/categories"
-            className="text-sm font-bold text-brand-purple hover:text-brand-pink inline-flex items-center space-x-1 mt-2 md:mt-0 transition-colors"
-          >
-            <span>View All Categories</span>
-            <ChevronRight className="w-4 h-4" />
-          </Link>
-        </div>
-
-        {isLoading ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            {[1, 2, 3, 4].map((n) => (
-              <CategoryCardSkeleton key={n} />
-            ))}
-          </div>
-        ) : categories.length > 0 ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            {categories.map((cat) => (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          
+          {/* Offer Banner */}
+          <div className="bg-gradient-to-r from-amber-500 to-rose-500 rounded-3xl p-6 sm:p-8 text-white shadow-lg flex items-center justify-between">
+            <div className="space-y-2">
+              <span className="text-[10px] font-black uppercase tracking-widest bg-white/20 px-3 py-1 rounded-full">
+                SPECIAL OFFER
+              </span>
+              <h3 className="text-2xl sm:text-3xl font-black font-display leading-tight">
+                Festive Special Offer <br />
+                <span className="text-yellow-200">Up to 50% OFF</span>
+              </h3>
               <Link
-                key={cat.id || cat.slug}
-                to={`/category/${cat.slug}`}
-                className="group bg-white rounded-3xl p-5 border border-slate-100 shadow-sm hover:shadow-xl hover:border-brand-purple/40 transition-all duration-300 flex flex-col justify-between"
+                to="/shop"
+                className="mt-3 inline-flex items-center space-x-1.5 bg-white text-slate-900 font-black px-5 py-2.5 rounded-full text-xs shadow hover:bg-slate-100 transition-colors"
               >
-                <div className="aspect-video w-full rounded-2xl overflow-hidden bg-slate-50 mb-4">
-                  <img
-                    src={cat.image || 'https://images.unsplash.com/photo-1566576912321-d58ddd7a6088?auto=format&fit=crop&q=80&w=600'}
-                    alt={cat.name}
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                  />
-                </div>
-                <div>
-                  <div className="flex items-center justify-between">
-                    <h3 className="font-bold text-slate-900 text-lg group-hover:text-brand-purple transition-colors">
-                      {cat.name}
-                    </h3>
-                    <span className="text-xs font-bold bg-purple-50 text-brand-purple px-2.5 py-1 rounded-full">
-                      {cat.productCount ?? 0} Items
-                    </span>
-                  </div>
-                  <p className="text-xs text-slate-500 mt-2 line-clamp-2 leading-relaxed">
-                    {cat.description || 'Premium items for kids & toddlers.'}
-                  </p>
-                </div>
-                <div className="mt-4 pt-3 border-t border-slate-50 flex items-center text-xs font-bold text-brand-purple group-hover:translate-x-1 transition-transform">
-                  <span>BROWSE CATEGORY</span>
-                  <ChevronRight className="w-4 h-4 ml-1" />
-                </div>
+                <span>Shop Now</span>
+                <ArrowRight className="w-4 h-4" />
               </Link>
-            ))}
+            </div>
+            <div className="hidden sm:block text-6xl">🎁</div>
           </div>
-        ) : null}
+
+          {/* Delivery & WhatsApp Banner */}
+          <div className="bg-gradient-to-r from-sky-500 to-indigo-600 rounded-3xl p-6 sm:p-8 text-white shadow-lg flex items-center justify-between">
+            <div className="space-y-2">
+              <span className="text-[10px] font-black uppercase tracking-widest bg-white/20 px-3 py-1 rounded-full">
+                FAST & SECURE
+              </span>
+              <h3 className="text-2xl sm:text-3xl font-black font-display leading-tight">
+                All Kerala Delivery <br />
+                <span className="text-sky-200">Fast Dispatch</span>
+              </h3>
+              <a
+                href={generateGeneralWhatsAppUrl()}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="mt-3 inline-flex items-center space-x-1.5 bg-emerald-500 hover:bg-emerald-600 text-white font-black px-5 py-2.5 rounded-full text-xs shadow transition-colors"
+              >
+                <Phone className="w-3.5 h-3.5 fill-current" />
+                <span>Order on WhatsApp</span>
+              </a>
+            </div>
+            <div className="hidden sm:block text-6xl">🚚</div>
+          </div>
+
+        </div>
       </section>
 
-      {/* 4. FEATURED PRODUCTS */}
+      {/* 4. TRENDING PRODUCTS */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex flex-col md:flex-row md:items-end justify-between mb-8">
+        <div className="flex items-center justify-between mb-6">
           <div>
-            <span className="text-xs font-bold text-brand-pink uppercase tracking-widest flex items-center space-x-1">
-              <Zap className="w-3.5 h-3.5" />
-              <span>Handpicked Specials</span>
-            </span>
-            <h2 className="text-3xl font-black text-slate-900 tracking-tight font-display mt-1">
-              Featured Products
+            <h2 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight font-display">
+              Trending Products
             </h2>
+            <p className="text-xs text-slate-500 mt-0.5">Most popular kids electric ride-ons & RC vehicles</p>
           </div>
           <Link
-            to="/shop?featured=true"
-            className="text-sm font-bold text-brand-purple hover:text-brand-pink inline-flex items-center space-x-1 mt-2 md:mt-0 transition-colors"
+            to="/shop?sort=featured"
+            className="text-xs font-black text-amber-600 hover:underline flex items-center space-x-1"
           >
-            <span>View All Featured</span>
+            <span>View All</span>
             <ChevronRight className="w-4 h-4" />
           </Link>
         </div>
 
         {isLoading ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6">
             {[1, 2, 3, 4].map((n) => (
               <ProductCardSkeleton key={n} />
             ))}
           </div>
         ) : featuredProducts.length > 0 ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6">
             {featuredProducts.map((product) => (
               <ProductCard key={product.id} product={product} />
             ))}
@@ -263,112 +218,76 @@ export const Home: React.FC = () => {
         ) : null}
       </section>
 
-      {/* 5. RIDE-ON SPOTLIGHT SECTION */}
-      {rideOnProducts.length > 0 && (
-        <section className="bg-slate-900 text-white py-16">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="flex flex-col md:flex-row md:items-end justify-between mb-8">
-              <div>
-                <span className="text-xs font-bold text-brand-yellow uppercase tracking-widest">
-                  Heavy Duty Ride-On Cars
-                </span>
-                <h2 className="text-3xl font-black font-display mt-1 text-white">
-                  Electric Ride-On Cars & Jeeps
-                </h2>
-              </div>
-              <Link to="/category/kids-ride-on" className="text-brand-yellow hover:underline text-sm font-bold mt-2 md:mt-0">
-                Explore All Ride-Ons →
-              </Link>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-              {rideOnProducts.map((product) => (
-                <ProductCard key={product.id} product={product} />
-              ))}
-            </div>
-          </div>
-        </section>
-      )}
-
-      {/* 6. TRUST & VALUE PROPOSITIONS */}
+      {/* 5. NEW ARRIVALS */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="bg-white rounded-3xl p-8 shadow-sm border border-slate-100 grid grid-cols-1 md:grid-cols-4 gap-8">
-          <div className="flex items-start space-x-4">
-            <div className="p-3 bg-brand-purple/10 text-brand-purple rounded-2xl flex-shrink-0">
-              <ShieldCheck className="w-8 h-8" />
-            </div>
-            <div>
-              <h4 className="font-bold text-slate-900 text-base font-display">Tested Quality</h4>
-              <p className="text-xs text-slate-500 mt-1 leading-relaxed">Safety certified materials and heavy duty build for active play.</p>
-            </div>
-          </div>
-
-          <div className="flex items-start space-x-4">
-            <div className="p-3 bg-brand-pink/10 text-brand-pink rounded-2xl flex-shrink-0">
-              <Truck className="w-8 h-8" />
-            </div>
-            <div>
-              <h4 className="font-bold text-slate-900 text-base font-display">Kerala Delivery</h4>
-              <p className="text-xs text-slate-500 mt-1 leading-relaxed">Fast dispatch across Kozhikode, Kochi, Malappuram & Kerala.</p>
-            </div>
-          </div>
-
-          <div className="flex items-start space-x-4">
-            <div className="p-3 bg-emerald-100 text-emerald-700 rounded-2xl flex-shrink-0">
-              <Phone className="w-8 h-8" />
-            </div>
-            <div>
-              <h4 className="font-bold text-slate-900 text-base font-display">WhatsApp Checkout</h4>
-              <p className="text-xs text-slate-500 mt-1 leading-relaxed">Direct WhatsApp order placement with instant team response.</p>
-            </div>
-          </div>
-
-          <div className="flex items-start space-x-4">
-            <div className="p-3 bg-amber-100 text-amber-700 rounded-2xl flex-shrink-0">
-              <Award className="w-8 h-8" />
-            </div>
-            <div>
-              <h4 className="font-bold text-slate-900 text-base font-display">Happy Customers</h4>
-              <p className="text-xs text-slate-500 mt-1 leading-relaxed">Trusted by hundreds of parents for quality ride-ons & toys.</p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* 7. NEW ARRIVALS */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex flex-col md:flex-row md:items-end justify-between mb-8">
+        <div className="flex items-center justify-between mb-6">
           <div>
-            <span className="text-xs font-bold text-brand-purple uppercase tracking-widest">
-              Fresh Additions
-            </span>
-            <h2 className="text-3xl font-black text-slate-900 tracking-tight font-display mt-1">
+            <h2 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight font-display">
               New Arrivals
             </h2>
+            <p className="text-xs text-slate-500 mt-0.5">Freshly added bikes, scooters, and toys</p>
           </div>
           <Link
             to="/shop?sort=newest"
-            className="text-sm font-bold text-brand-purple hover:text-brand-pink inline-flex items-center space-x-1 mt-2 md:mt-0 transition-colors"
+            className="text-xs font-black text-amber-600 hover:underline flex items-center space-x-1"
           >
-            <span>View All New Arrivals</span>
+            <span>View All</span>
             <ChevronRight className="w-4 h-4" />
           </Link>
         </div>
 
         {isLoading ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6">
             {[1, 2, 3, 4].map((n) => (
               <ProductCardSkeleton key={n} />
             ))}
           </div>
         ) : newArrivals.length > 0 ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6">
             {newArrivals.map((product) => (
               <ProductCard key={product.id} product={product} />
             ))}
           </div>
         ) : null}
       </section>
+
+      {/* 6. WHY KING DAY */}
+      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="bg-white rounded-3xl p-8 shadow-sm border border-slate-200 grid grid-cols-1 md:grid-cols-4 gap-6 text-center">
+          <div className="space-y-2 p-3">
+            <div className="w-12 h-12 bg-amber-100 text-amber-600 rounded-full flex items-center justify-center mx-auto">
+              <ShieldCheck className="w-6 h-6" />
+            </div>
+            <h4 className="font-extrabold text-slate-900 text-sm">Certified Safe</h4>
+            <p className="text-xs text-slate-500">Quality tested materials & heavy duty build</p>
+          </div>
+
+          <div className="space-y-2 p-3">
+            <div className="w-12 h-12 bg-sky-100 text-sky-600 rounded-full flex items-center justify-center mx-auto">
+              <Truck className="w-6 h-6" />
+            </div>
+            <h4 className="font-extrabold text-slate-900 text-sm">All Kerala Delivery</h4>
+            <p className="text-xs text-slate-500">Fast shipping across all districts in Kerala</p>
+          </div>
+
+          <div className="space-y-2 p-3">
+            <div className="w-12 h-12 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto">
+              <Phone className="w-6 h-6 fill-current" />
+            </div>
+            <h4 className="font-extrabold text-slate-900 text-sm">Instant WhatsApp Order</h4>
+            <p className="text-xs text-slate-500">Direct order placement with human support</p>
+          </div>
+
+          <div className="space-y-2 p-3">
+            <div className="w-12 h-12 bg-rose-100 text-rose-600 rounded-full flex items-center justify-center mx-auto">
+              <Award className="w-6 h-6" />
+            </div>
+            <h4 className="font-extrabold text-slate-900 text-sm">Best Prices Guaranteed</h4>
+            <p className="text-xs text-slate-500">Direct importer pricing for quality ride-ons</p>
+          </div>
+        </div>
+      </section>
+
     </div>
   );
 };

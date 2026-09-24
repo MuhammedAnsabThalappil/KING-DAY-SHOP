@@ -7,6 +7,9 @@ export interface Category {
   active: boolean;
   displayOrder: number;
   productCount?: number;
+  parentId?: string;
+  parent?: Category;
+  subcategories?: Category[];
   createdAt?: string;
   updatedAt?: string;
 }

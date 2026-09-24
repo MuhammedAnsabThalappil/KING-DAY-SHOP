@@ -33,6 +33,8 @@ import { AdminOrders } from './pages/admin/AdminOrders';
 import { AdminCustomers } from './pages/admin/AdminCustomers';
 import { AdminAnalytics } from './pages/admin/AdminAnalytics';
 
+import { MobileBottomNav } from './components/layout/MobileBottomNav';
+
 // Protected Route Component for Admin Routes (Publicly accessible per requirement)
 const ProtectedAdminRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   return <>{children}</>;
@@ -113,7 +115,7 @@ export const App: React.FC = () => {
         <CartProvider>
           {!isAdminRoute && <Header />}
 
-          <main className="flex-1">
+          <main className="flex-1 pb-16 lg:pb-0">
             <ErrorBoundary>
               <Routes>
                 {/* Public Customer Routes */}
@@ -232,6 +234,7 @@ export const App: React.FC = () => {
 
           {!isAdminRoute && <Footer />}
           {!isAdminRoute && <FloatingWhatsApp />}
+          {!isAdminRoute && <MobileBottomNav />}
         </CartProvider>
       </WishlistProvider>
     </AuthProvider>

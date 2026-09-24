@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { Search, Menu, X, ChevronDown, Sparkles, Phone, ShoppingBag, Heart, ShieldCheck } from 'lucide-react';
+import { Search, Menu, X, ChevronDown, Crown, Phone, ShoppingBag, Heart, Sparkles, ChevronRight } from 'lucide-react';
 import { Category, Product } from '../../types';
 import { api } from '../../services/api';
 import { useCart } from '../../context/CartContext';
@@ -10,9 +10,11 @@ import { formatINR, generateGeneralWhatsAppUrl } from '../../utils/formatters';
 export const Header: React.FC = () => {
   const [categories, setCategories] = useState<Category[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState('');
   const [searchSuggestions, setSearchSuggestions] = useState<Product[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isAllCategoriesOpen, setIsAllCategoriesOpen] = useState(false);
   const [isCategoryDropdownOpen, setIsCategoryDropdownOpen] = useState(false);
 
   const { itemCount } = useCart();
@@ -58,6 +60,7 @@ export const Header: React.FC = () => {
   // Close menus on route change
   useEffect(() => {
     setIsMobileMenuOpen(false);
+    setIsAllCategoriesOpen(false);
     setIsCategoryDropdownOpen(false);
     setSearchQuery('');
     setSearchSuggestions([]);
@@ -65,23 +68,26 @@ export const Header: React.FC = () => {
 
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (searchQuery.trim()) {
-      navigate(`/shop?search=${encodeURIComponent(searchQuery.trim())}`);
+    if (searchQuery.trim() || selectedCategory) {
+      const params = new URLSearchParams();
+      if (searchQuery.trim()) params.append('search', searchQuery.trim());
+      if (selectedCategory) params.append('categorySlug', selectedCategory);
+      navigate(`/shop?${params.toString()}`);
       setSearchSuggestions([]);
     }
   };
 
   return (
-    <header className="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-slate-100 shadow-sm transition-all">
+    <header className="sticky top-0 z-40 bg-white border-b border-slate-200 shadow-sm transition-all">
       {/* Top Banner Marquee */}
-      <div className="bg-slate-900 text-white py-1.5 px-4 text-xs font-medium tracking-wide">
+      <div className="bg-slate-900 text-white py-1.5 px-4 text-xs font-medium">
         <div className="max-w-7xl mx-auto flex justify-between items-center">
-          <div className="flex items-center space-x-2">
-            <span className="bg-brand-pink text-white px-2 py-0.5 rounded-full text-[10px] uppercase font-bold tracking-wider animate-pulse">
-              KING DAY
+          <div className="flex items-center space-x-2 text-[11px] sm:text-xs">
+            <span className="bg-amber-400 text-slate-900 px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider">
+              ALL KERALA DELIVERY
             </span>
             <span className="hidden sm:inline text-slate-300">
-              Fun • Quality • Happiness | Electric Ride-Ons, RC Toys & Bicycles
+              Genuine Products • Best Prices • Support: +91 9495902904
             </span>
           </div>
           <div className="flex items-center space-x-5 text-xs">
@@ -89,16 +95,16 @@ export const Header: React.FC = () => {
               href={generateGeneralWhatsAppUrl()}
               target="_blank"
               rel="noopener noreferrer"
-              className="flex items-center space-x-1.5 text-brand-yellow hover:text-white transition-colors font-bold"
+              className="flex items-center space-x-1.5 text-amber-400 hover:text-white transition-colors font-bold"
             >
-              <Phone className="w-3.5 h-3.5" />
-              <span>WhatsApp: +91 9495902904</span>
+              <Phone className="w-3.5 h-3.5 fill-current" />
+              <span>Support: +91 9495902904</span>
             </a>
             <Link to="/track-order" className="text-slate-300 hover:text-white text-xs underline underline-offset-2 hidden md:inline">
               Track Order
             </Link>
-            <Link to="/admin" className="text-slate-300 hover:text-white text-xs underline underline-offset-2 font-semibold">
-              Admin Dashboard
+            <Link to="/admin" className="text-slate-300 hover:text-white text-xs font-bold underline underline-offset-2">
+              Admin
             </Link>
           </div>
         </div>
@@ -106,42 +112,53 @@ export const Header: React.FC = () => {
 
       {/* Main Header Container */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-20">
-          {/* Logo */}
-          <Link to="/" className="flex items-center space-x-3 group">
-            <div className="w-11 h-11 rounded-2xl bg-brand-gradient flex items-center justify-center shadow-md shadow-purple-500/20 group-hover:scale-105 transition-transform">
-              <Sparkles className="w-6 h-6 text-brand-yellow" />
-            </div>
-            <div>
-              <span className="text-2xl font-black tracking-tight text-slate-900 block leading-none font-display">
-                KING <span className="text-brand-pink">DAY</span>
-              </span>
-              <span className="text-[10px] font-extrabold tracking-wider text-slate-400 uppercase block mt-1">
-                Fun • Quality • Happiness
-              </span>
-            </div>
-          </Link>
+        <div className="flex items-center justify-between h-20 gap-4">
+          
+          {/* Mobile Menu Button & Brand Logo */}
+          <div className="flex items-center space-x-3">
+            <button
+              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+              className="lg:hidden p-2 text-slate-700 hover:text-slate-900 rounded-xl hover:bg-slate-100"
+              aria-label="Toggle menu"
+            >
+              {isMobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+            </button>
 
-          {/* Search Bar with Instant Suggestions */}
-          <div className="hidden md:block relative flex-1 max-w-md mx-6">
-            <form onSubmit={handleSearchSubmit} className="relative w-full">
+            <Link to="/" className="flex items-center space-x-2.5 group">
+              <div className="w-10 h-10 rounded-2xl bg-amber-400 flex items-center justify-center shadow-md group-hover:scale-105 transition-transform">
+                <Crown className="w-6 h-6 text-slate-900 fill-current" />
+              </div>
+              <div>
+                <span className="text-2xl font-black tracking-tight text-slate-900 block leading-none font-display">
+                  KING <span className="text-amber-500">DAY</span>
+                </span>
+                <span className="text-[9px] font-extrabold tracking-wider text-slate-400 uppercase block mt-0.5">
+                  Fun • Quality • Happiness
+                </span>
+              </div>
+            </Link>
+          </div>
+
+          {/* Search Bar with Category Dropdown & Instant Suggestions */}
+          <div className="hidden md:block relative flex-1 max-w-xl mx-4">
+            <form onSubmit={handleSearchSubmit} className="flex items-center bg-slate-100 border border-slate-200 rounded-full p-1 focus-within:ring-2 focus-within:ring-amber-400 focus-within:bg-white transition-all shadow-inner">
               <input
                 type="text"
-                placeholder="Search ride-on cars, RC toys, bicycles, SKU..."
+                placeholder="Search for toys, cycles, ride-ons..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-4 pr-10 py-2.5 bg-slate-50 border border-slate-200 rounded-full text-sm focus:outline-none focus:ring-2 focus:ring-brand-purple focus:bg-white transition-all shadow-inner"
+                className="w-full px-4 py-2 bg-transparent text-sm text-slate-900 focus:outline-none placeholder:text-slate-400"
               />
               <button
                 type="submit"
-                className="absolute right-1.5 top-1.5 bottom-1.5 px-3 bg-brand-gradient text-white rounded-full flex items-center justify-center hover:opacity-90 transition-opacity"
+                className="px-4 py-2.5 bg-amber-400 hover:bg-amber-500 text-slate-900 font-extrabold rounded-full flex items-center justify-center transition-colors shadow-sm"
                 aria-label="Search"
               >
                 <Search className="w-4 h-4" />
               </button>
             </form>
 
-            {/* Suggestions Overlay */}
+            {/* Instant Suggestions Overlay */}
             {searchQuery.trim().length > 0 && (
               <div className="absolute top-full left-0 right-0 bg-white rounded-2xl shadow-2xl border border-slate-100 mt-2 py-2 z-50 overflow-hidden">
                 {isSearching ? (
@@ -149,7 +166,7 @@ export const Header: React.FC = () => {
                 ) : searchSuggestions.length > 0 ? (
                   <div>
                     <div className="px-4 py-1.5 text-[11px] font-bold text-slate-400 uppercase tracking-wider">
-                      Product Suggestions
+                      Matching Products
                     </div>
                     {searchSuggestions.map((prod) => (
                       <Link
@@ -165,7 +182,7 @@ export const Header: React.FC = () => {
                         />
                         <div className="flex-1 min-w-0">
                           <p className="font-bold text-xs text-slate-900 truncate">{prod.name}</p>
-                          <span className="text-[11px] font-black text-brand-purple">{formatINR(prod.salePrice)}</span>
+                          <span className="text-[11px] font-black text-amber-600">{formatINR(prod.salePrice)}</span>
                         </div>
                       </Link>
                     ))}
@@ -177,61 +194,10 @@ export const Header: React.FC = () => {
             )}
           </div>
 
-          {/* Desktop Navigation */}
-          <nav className="hidden lg:flex items-center space-x-7 text-sm font-bold text-slate-700">
-            <Link to="/" className="hover:text-brand-purple transition-colors">
-              Home
-            </Link>
-            <Link to="/shop" className="hover:text-brand-purple transition-colors">
-              Shop
-            </Link>
-
-            {/* Categories Dropdown */}
-            <div
-              className="relative"
-              onMouseEnter={() => setIsCategoryDropdownOpen(true)}
-              onMouseLeave={() => setIsCategoryDropdownOpen(false)}
-            >
-              <Link to="/categories" className="flex items-center space-x-1 hover:text-brand-purple transition-colors py-2">
-                <span>Categories</span>
-                <ChevronDown className="w-4 h-4 text-slate-400" />
-              </Link>
-
-              {isCategoryDropdownOpen && (
-                <div className="absolute top-full left-0 w-64 bg-white rounded-2xl shadow-xl border border-slate-100 py-3 z-50">
-                  <div className="px-4 py-1.5 text-xs font-bold text-slate-400 uppercase tracking-wider border-b border-slate-50 mb-1">
-                    Explore Categories
-                  </div>
-                  {categories.map((cat) => (
-                    <Link
-                      key={cat.id || cat.slug}
-                      to={`/category/${cat.slug}`}
-                      className="flex items-center justify-between px-4 py-2.5 hover:bg-slate-50 text-slate-700 hover:text-brand-purple transition-colors text-sm font-medium"
-                    >
-                      <span>{cat.name}</span>
-                    </Link>
-                  ))}
-                  <div className="border-t border-slate-100 mt-2 pt-2 px-4">
-                    <Link to="/categories" className="text-xs font-bold text-brand-purple hover:underline block text-center py-1">
-                      View All Categories →
-                    </Link>
-                  </div>
-                </div>
-              )}
-            </div>
-
-            <Link to="/about" className="hover:text-brand-purple transition-colors">
-              About
-            </Link>
-            <Link to="/contact" className="hover:text-brand-purple transition-colors">
-              Contact
-            </Link>
-          </nav>
-
-          {/* Action Icons (Wishlist, Cart, WhatsApp) */}
-          <div className="flex items-center space-x-3 sm:space-x-4">
-            <Link to="/wishlist" className="p-2.5 text-slate-700 hover:text-brand-pink transition-colors relative" title="Wishlist">
-              <Heart className="w-6 h-6" />
+          {/* Action Icons (Wishlist, Cart, WhatsApp Order CTA) */}
+          <div className="flex items-center space-x-2 sm:space-x-3">
+            <Link to="/wishlist" className="p-2.5 text-slate-700 hover:text-amber-500 transition-colors relative" title="Wishlist">
+              <Heart className="w-6 h-6 stroke-[2]" />
               {wishlistCount > 0 && (
                 <span className="absolute top-1 right-1 bg-brand-pink text-white text-[10px] font-black w-4 h-4 rounded-full flex items-center justify-center animate-bounce">
                   {wishlistCount}
@@ -239,10 +205,10 @@ export const Header: React.FC = () => {
               )}
             </Link>
 
-            <Link to="/cart" className="p-2.5 text-slate-700 hover:text-brand-purple transition-colors relative" title="Cart">
-              <ShoppingBag className="w-6 h-6" />
+            <Link to="/cart" className="p-2.5 text-slate-700 hover:text-amber-500 transition-colors relative" title="Cart">
+              <ShoppingBag className="w-6 h-6 stroke-[2]" />
               {itemCount > 0 && (
-                <span className="absolute top-1 right-1 bg-brand-purple text-white text-[10px] font-black w-4 h-4 rounded-full flex items-center justify-center shadow">
+                <span className="absolute top-1 right-1 bg-amber-500 text-slate-900 text-[10px] font-black w-4 h-4 rounded-full flex items-center justify-center shadow">
                   {itemCount}
                 </span>
               )}
@@ -252,72 +218,198 @@ export const Header: React.FC = () => {
               href={generateGeneralWhatsAppUrl()}
               target="_blank"
               rel="noopener noreferrer"
-              className="hidden sm:inline-flex items-center space-x-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-4 py-2.5 rounded-full text-xs shadow transition-all"
+              className="hidden sm:inline-flex items-center space-x-1.5 bg-amber-400 hover:bg-amber-500 text-slate-900 font-black px-4 py-2.5 rounded-full text-xs shadow-md transition-all group"
             >
-              <Phone className="w-3.5 h-3.5 fill-current" />
-              <span>WhatsApp Us</span>
+              <Phone className="w-4 h-4 fill-current group-hover:scale-110 transition-transform" />
+              <span>WhatsApp Order</span>
             </a>
-
-            <button
-              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-              className="lg:hidden p-2 text-slate-700 hover:text-slate-900"
-              aria-label="Toggle menu"
-            >
-              {isMobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
-            </button>
           </div>
         </div>
-      </div>
 
-      {/* Mobile Navigation Drawer */}
-      {isMobileMenuOpen && (
-        <div className="lg:hidden bg-white border-t border-slate-100 px-4 pt-4 pb-6 space-y-4 animate-in slide-in-from-top duration-200">
+        {/* Mobile Search Bar below header */}
+        <div className="md:hidden pb-3">
           <form onSubmit={handleSearchSubmit} className="relative">
             <input
               type="text"
-              placeholder="Search catalogue..."
+              placeholder="Search for toys, cycles, ride-ons..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-4 pr-10 py-2.5 bg-slate-50 border border-slate-200 rounded-full text-sm"
+              className="w-full pl-4 pr-10 py-2 bg-slate-100 border border-slate-200 rounded-full text-xs text-slate-900 focus:outline-none focus:ring-2 focus:ring-amber-400"
             />
-            <button type="submit" className="absolute right-3 top-3 text-slate-400">
+            <button type="submit" className="absolute right-3 top-2 text-slate-400">
               <Search className="w-4 h-4" />
             </button>
           </form>
+        </div>
+      </div>
 
+      {/* Desktop Navigation Sub-Header Bar */}
+      <div className="hidden lg:block bg-slate-50 border-t border-slate-200">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between h-12 text-xs font-bold text-slate-800">
+          
+          <div className="flex items-center space-x-6">
+            {/* All Categories Button */}
+            <div className="relative">
+              <button
+                onClick={() => setIsAllCategoriesOpen(!isAllCategoriesOpen)}
+                className="bg-amber-400 hover:bg-amber-500 text-slate-900 px-4 py-2 rounded-xl flex items-center space-x-2 font-black transition-colors shadow-sm"
+              >
+                <Menu className="w-4 h-4" />
+                <span>All Categories</span>
+                <ChevronDown className="w-3.5 h-3.5" />
+              </button>
+
+              {isAllCategoriesOpen && (
+                <div className="absolute top-full left-0 w-72 bg-white rounded-2xl shadow-2xl border border-slate-100 py-3 z-50 mt-1">
+                  <div className="px-4 py-1.5 text-[11px] font-bold text-slate-400 uppercase tracking-wider border-b border-slate-100 mb-1">
+                    Categories & Subcategories
+                  </div>
+                  {categories.map((cat) => (
+                    <div key={cat.id || cat.slug} className="group/item relative">
+                      <Link
+                        to={`/category/${cat.slug}`}
+                        onClick={() => setIsAllCategoriesOpen(false)}
+                        className="flex items-center justify-between px-4 py-2.5 hover:bg-amber-50 hover:text-amber-600 transition-colors text-xs font-bold text-slate-800"
+                      >
+                        <span>{cat.name}</span>
+                        {cat.subcategories && cat.subcategories.length > 0 ? (
+                          <ChevronRight className="w-3.5 h-3.5 text-slate-400" />
+                        ) : (
+                          <span className="text-[10px] text-slate-400 bg-slate-100 px-2 py-0.5 rounded-full">{cat.productCount || 0}</span>
+                        )}
+                      </Link>
+
+                      {/* Subcategories Flyout */}
+                      {cat.subcategories && cat.subcategories.length > 0 && (
+                        <div className="hidden group-hover/item:block absolute left-full top-0 w-56 bg-white rounded-2xl shadow-2xl border border-slate-100 py-2 z-50 ml-1">
+                          <div className="px-3 py-1 text-[10px] font-bold text-slate-400 uppercase border-b border-slate-50 mb-1">
+                            {cat.name} Subcategories
+                          </div>
+                          {cat.subcategories.map((sub) => (
+                            <Link
+                              key={sub.id || sub.slug}
+                              to={`/shop?categorySlug=${sub.slug}`}
+                              onClick={() => setIsAllCategoriesOpen(false)}
+                              className="block px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-amber-50 hover:text-amber-600 transition-colors"
+                            >
+                              {sub.name}
+                            </Link>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                  <div className="border-t border-slate-100 mt-2 pt-2 px-4">
+                    <Link
+                      to="/categories"
+                      onClick={() => setIsAllCategoriesOpen(false)}
+                      className="text-xs font-bold text-amber-600 hover:underline block text-center py-1"
+                    >
+                      Browse All Categories →
+                    </Link>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Nav Links */}
+            <nav className="flex items-center space-x-6">
+              <Link to="/" className={`hover:text-amber-500 transition-colors ${location.pathname === '/' ? 'text-amber-600 font-extrabold' : ''}`}>
+                Home
+              </Link>
+              <Link to="/shop" className={`hover:text-amber-500 transition-colors ${location.pathname === '/shop' ? 'text-amber-600 font-extrabold' : ''}`}>
+                Shop
+              </Link>
+
+              {/* Hover Categories Dropdown */}
+              <div
+                className="relative"
+                onMouseEnter={() => setIsCategoryDropdownOpen(true)}
+                onMouseLeave={() => setIsCategoryDropdownOpen(false)}
+              >
+                <Link to="/categories" className="flex items-center space-x-1 hover:text-amber-500 transition-colors py-2">
+                  <span>Categories</span>
+                  <ChevronDown className="w-3.5 h-3.5 text-slate-400" />
+                </Link>
+
+                {isCategoryDropdownOpen && (
+                  <div className="absolute top-full left-0 w-64 bg-white rounded-2xl shadow-xl border border-slate-100 py-3 z-50">
+                    {categories.map((cat) => (
+                      <Link
+                        key={cat.id || cat.slug}
+                        to={`/category/${cat.slug}`}
+                        className="flex items-center justify-between px-4 py-2 hover:bg-slate-50 text-slate-700 hover:text-amber-600 transition-colors text-xs font-semibold"
+                      >
+                        <span>{cat.name}</span>
+                      </Link>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              <Link to="/shop?sort=featured" className="hover:text-amber-500 transition-colors flex items-center space-x-1 text-rose-500">
+                <Sparkles className="w-3.5 h-3.5" />
+                <span>Deals</span>
+              </Link>
+
+              <Link to="/shop?sort=newest" className="hover:text-amber-500 transition-colors">
+                New Arrivals
+              </Link>
+
+              <Link to="/shop?sort=best-sellers" className="hover:text-amber-500 transition-colors">
+                Best Sellers
+              </Link>
+            </nav>
+          </div>
+
+          <a
+            href={generateGeneralWhatsAppUrl()}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center space-x-1.5 text-emerald-600 font-bold hover:text-emerald-700"
+          >
+            <Phone className="w-3.5 h-3.5 fill-current" />
+            <span>Fast WhatsApp Checkout</span>
+          </a>
+        </div>
+      </div>
+
+      {/* Mobile Menu Drawer */}
+      {isMobileMenuOpen && (
+        <div className="lg:hidden bg-white border-t border-slate-100 px-4 pt-4 pb-6 space-y-4 animate-in slide-in-from-top duration-200">
           <nav className="flex flex-col space-y-3 font-bold text-slate-800 text-sm">
-            <Link to="/" className="py-1 hover:text-brand-purple">
+            <Link to="/" className="py-1 hover:text-amber-500">
               Home
             </Link>
-            <Link to="/shop" className="py-1 hover:text-brand-purple">
+            <Link to="/shop" className="py-1 hover:text-amber-500">
               Shop All Products
             </Link>
-            <Link to="/categories" className="py-1 hover:text-brand-purple">
-              Categories
+            <Link to="/categories" className="py-1 hover:text-amber-500">
+              Categories & Subcategories
             </Link>
-            <Link to="/track-order" className="py-1 hover:text-brand-purple">
+            <Link to="/track-order" className="py-1 hover:text-amber-500">
               Track Order
             </Link>
-            <Link to="/about" className="py-1 hover:text-brand-purple">
+            <Link to="/about" className="py-1 hover:text-amber-500">
               About Us
             </Link>
-            <Link to="/contact" className="py-1 hover:text-brand-purple">
+            <Link to="/contact" className="py-1 hover:text-amber-500">
               Contact
             </Link>
           </nav>
 
           <div className="pt-2 border-t border-slate-100 flex items-center justify-between">
             <Link to="/admin" className="text-xs font-bold text-slate-500 hover:text-slate-900">
-              Admin Control Panel
+              Admin Panel
             </Link>
             <a
               href={generateGeneralWhatsAppUrl()}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center space-x-1.5 bg-emerald-600 text-white font-bold text-xs px-3.5 py-2 rounded-full"
+              className="inline-flex items-center space-x-1.5 bg-amber-400 text-slate-900 font-bold text-xs px-3.5 py-2 rounded-full"
             >
-              <Phone className="w-3 h-3 fill-current" />
-              <span>WhatsApp Chat</span>
+              <Phone className="w-3.5 h-3.5 fill-current" />
+              <span>WhatsApp Order</span>
             </a>
           </div>
         </div>

@@ -23,7 +23,13 @@ const DEFAULT_CATEGORIES: Category[] = [
     image: 'https://images.unsplash.com/photo-1594787318286-3d835c1d207f?auto=format&fit=crop&q=80&w=600',
     active: true,
     displayOrder: 1,
-    productCount: 12,
+    productCount: 32,
+    subcategories: [
+      { id: 'sub-jeeps', name: 'Electric Jeeps', slug: 'electric-jeeps', parentId: 'cat-ride-on', active: true, displayOrder: 1, productCount: 12 },
+      { id: 'sub-bikes', name: 'Electric Bikes', slug: 'electric-bikes', parentId: 'cat-ride-on', active: true, displayOrder: 2, productCount: 10 },
+      { id: 'sub-scooters', name: 'Electric Scooters', slug: 'electric-scooters', parentId: 'cat-ride-on', active: true, displayOrder: 3, productCount: 6 },
+      { id: 'sub-battery-cars', name: 'Battery Cars', slug: 'battery-cars', parentId: 'cat-ride-on', active: true, displayOrder: 4, productCount: 4 },
+    ],
   },
   {
     id: 'cat-toys',
@@ -33,7 +39,12 @@ const DEFAULT_CATEGORIES: Category[] = [
     image: 'https://images.unsplash.com/photo-1566576912321-d58ddd7a6088?auto=format&fit=crop&q=80&w=600',
     active: true,
     displayOrder: 2,
-    productCount: 18,
+    productCount: 86,
+    subcategories: [
+      { id: 'sub-rc-cars', name: 'RC Vehicles & Stunts', slug: 'rc-vehicles', parentId: 'cat-toys', active: true, displayOrder: 1, productCount: 40 },
+      { id: 'sub-stem', name: 'STEM & Educational', slug: 'stem-toys', parentId: 'cat-toys', active: true, displayOrder: 2, productCount: 26 },
+      { id: 'sub-action', name: 'Action Figures & Dolls', slug: 'action-figures', parentId: 'cat-toys', active: true, displayOrder: 3, productCount: 20 },
+    ],
   },
   {
     id: 'cat-cycles',
@@ -43,7 +54,11 @@ const DEFAULT_CATEGORIES: Category[] = [
     image: 'https://images.unsplash.com/photo-1485965120184-e220f721d03e?auto=format&fit=crop&q=80&w=600',
     active: true,
     displayOrder: 3,
-    productCount: 9,
+    productCount: 44,
+    subcategories: [
+      { id: 'sub-bicycles', name: 'Kids Bicycles', slug: 'kids-bicycles', parentId: 'cat-cycles', active: true, displayOrder: 1, productCount: 24 },
+      { id: 'sub-tricycles', name: 'Tricycles & Walkers', slug: 'tricycles', parentId: 'cat-cycles', active: true, displayOrder: 2, productCount: 20 },
+    ],
   },
   {
     id: 'cat-baby',
@@ -53,7 +68,11 @@ const DEFAULT_CATEGORIES: Category[] = [
     image: 'https://images.unsplash.com/photo-1515488042361-ee00e0ddd4e4?auto=format&fit=crop&q=80&w=600',
     active: true,
     displayOrder: 4,
-    productCount: 6,
+    productCount: 28,
+    subcategories: [
+      { id: 'sub-strollers', name: 'Strollers & Prams', slug: 'strollers', parentId: 'cat-baby', active: true, displayOrder: 1, productCount: 16 },
+      { id: 'sub-highchairs', name: 'High Chairs & Care', slug: 'high-chairs', parentId: 'cat-baby', active: true, displayOrder: 2, productCount: 12 },
+    ],
   },
 ];
 

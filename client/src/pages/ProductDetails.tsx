@@ -12,8 +12,9 @@ import {
   Sparkles,
   ShoppingBag,
   Heart,
-  HelpCircle,
+  Star,
   Check,
+  Zap,
 } from 'lucide-react';
 import { Product } from '../types';
 import { api } from '../services/api';
@@ -32,6 +33,7 @@ export const ProductDetails: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [quantity, setQuantity] = useState(1);
   const [copied, setCopied] = useState(false);
+  const [activeTab, setActiveTab] = useState<'description' | 'specifications' | 'features' | 'delivery'>('description');
 
   const { addToCart } = useCart();
   const { toggleWishlist, isInWishlist } = useWishlist();
@@ -77,27 +79,27 @@ export const ProductDetails: React.FC = () => {
   if (!product) {
     return (
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 text-center space-y-6">
-        <div className="w-16 h-16 bg-pink-100 text-brand-pink rounded-full flex items-center justify-center mx-auto">
+        <div className="w-16 h-16 bg-amber-100 text-amber-500 rounded-full flex items-center justify-center mx-auto">
           <Sparkles className="w-8 h-8" />
         </div>
         <div className="space-y-2 max-w-md mx-auto">
           <h2 className="text-2xl font-black text-slate-900 font-display">Product Unavailable</h2>
-          <p className="text-sm text-slate-500">
-            This item may be temporarily out of catalogue or the link might be outdated. Connect with us on WhatsApp to check availability.
+          <p className="text-xs text-slate-500">
+            This item may be temporarily out of stock or link updated. Check availability on WhatsApp.
           </p>
         </div>
         <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
           <Link
             to="/shop"
-            className="inline-block bg-brand-gradient text-white font-bold px-6 py-3 rounded-full text-xs shadow transition-all"
+            className="inline-block bg-amber-400 text-slate-900 font-black px-6 py-3 rounded-full text-xs shadow"
           >
-            Browse All Products
+            Browse Catalogue
           </Link>
           <a
-            href={generateGeneralWhatsAppUrl(`Hello KING DAY, I was inquiring about product: ${slug}`)}
+            href={generateGeneralWhatsAppUrl(`Inquiring about product: ${slug}`)}
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center space-x-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-6 py-3 rounded-full text-xs shadow transition-all"
+            className="inline-flex items-center space-x-2 bg-emerald-600 hover:bg-emerald-700 text-white font-black px-6 py-3 rounded-full text-xs shadow"
           >
             <Phone className="w-4 h-4 fill-current" />
             <span>Inquire on WhatsApp</span>
@@ -136,23 +138,23 @@ export const ProductDetails: React.FC = () => {
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-12">
       {/* Breadcrumbs */}
       <nav className="flex items-center space-x-2 text-xs font-semibold text-slate-500">
-        <Link to="/" className="hover:text-brand-purple transition-colors">Home</Link>
+        <Link to="/" className="hover:text-amber-600 transition-colors">Home</Link>
         <ChevronRight className="w-3.5 h-3.5 text-slate-400" />
-        <Link to="/shop" className="hover:text-brand-purple transition-colors">Shop</Link>
+        <Link to="/shop" className="hover:text-amber-600 transition-colors">Shop</Link>
         <ChevronRight className="w-3.5 h-3.5 text-slate-400" />
         {product.category && (
           <>
-            <Link to={`/category/${product.category.slug}`} className="hover:text-brand-purple transition-colors">
+            <Link to={`/category/${product.category.slug}`} className="hover:text-amber-600 transition-colors">
               {product.category.name}
             </Link>
             <ChevronRight className="w-3.5 h-3.5 text-slate-400" />
           </>
         )}
-        <span className="text-brand-purple font-bold truncate max-w-xs">{product.name}</span>
+        <span className="text-amber-600 font-bold truncate max-w-xs">{product.name}</span>
       </nav>
 
       {/* Main Product Layout Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-start">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 items-start">
         
         {/* Left Column: Image Gallery */}
         <div>
@@ -161,57 +163,80 @@ export const ProductDetails: React.FC = () => {
 
         {/* Right Column: Details & Ordering */}
         <div className="space-y-6">
-          <div className="flex items-center justify-between">
-            {product.category && (
-              <span className="bg-purple-50 text-brand-purple text-xs font-bold px-3.5 py-1 rounded-full uppercase tracking-wider">
-                {product.category.name}
+          
+          <div>
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-xs font-bold text-amber-600 uppercase tracking-wider">
+                {product.category?.name || 'Ride-On'}
               </span>
-            )}
+              <div className="flex items-center space-x-3">
+                <span className="text-xs font-mono text-slate-400 font-bold">SKU: {product.sku}</span>
+                <button
+                  onClick={handleShare}
+                  className="p-1.5 rounded-full bg-slate-100 text-slate-600 hover:text-amber-600 transition-colors"
+                  title="Share product"
+                >
+                  {copied ? <Check className="w-4 h-4 text-emerald-600" /> : <Share2 className="w-4 h-4" />}
+                </button>
+              </div>
+            </div>
 
-            <div className="flex items-center space-x-3">
-              <span className="text-xs font-mono text-slate-400 font-semibold">SKU: {product.sku}</span>
-              <button
-                onClick={handleShare}
-                className="p-2 rounded-full bg-slate-100 text-slate-600 hover:text-brand-purple transition-colors"
-                title="Share product"
-              >
-                {copied ? <Check className="w-4 h-4 text-emerald-600" /> : <Share2 className="w-4 h-4" />}
-              </button>
+            <h1 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight font-display leading-tight">
+              {product.name}
+            </h1>
+
+            {/* Rating */}
+            <div className="flex items-center space-x-2 mt-2 text-xs">
+              <div className="flex items-center space-x-1 text-amber-500 font-extrabold">
+                <Star className="w-4 h-4 fill-current" />
+                <span>4.8</span>
+              </div>
+              <span className="text-slate-400">(120 reviews)</span>
             </div>
           </div>
 
-          <h1 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight font-display leading-snug">
-            {product.name}
-          </h1>
-
           {/* Pricing Box */}
-          <div className="bg-slate-50 p-4 sm:p-5 rounded-3xl border border-slate-100 flex items-baseline space-x-4">
-            <span className="text-3xl font-black text-slate-900 font-display">
-              {formatINR(product.salePrice)}
-            </span>
-            {product.mrp > product.salePrice && (
-              <>
-                <span className="text-base text-slate-400 line-through font-medium">
+          <div className="bg-amber-50/60 p-5 rounded-3xl border border-amber-200/80 space-y-1">
+            <div className="flex items-baseline space-x-3">
+              <span className="text-3xl font-black text-rose-600 font-display">
+                {formatINR(product.salePrice)}
+              </span>
+              {product.mrp > product.salePrice && (
+                <span className="text-base text-slate-400 line-through font-bold">
                   {formatINR(product.mrp)}
                 </span>
-                <span className="bg-brand-pink text-white text-xs font-black px-3 py-1 rounded-full uppercase">
-                  Save {discountPercent}%
-                </span>
-              </>
+              )}
+            </div>
+            {product.mrp > product.salePrice && (
+              <p className="text-xs font-bold text-emerald-700">
+                You save {formatINR(product.mrp - product.salePrice)} ({discountPercent}% OFF)
+              </p>
             )}
           </div>
+
+          {/* Feature Bullets */}
+          {product.features && product.features.length > 0 && (
+            <div className="space-y-1.5 text-xs text-slate-700">
+              {product.features.slice(0, 4).map((f, i) => (
+                <div key={i} className="flex items-center space-x-2">
+                  <CheckCircle2 className="w-4 h-4 text-amber-500 flex-shrink-0" />
+                  <span className="font-semibold">{f.feature}</span>
+                </div>
+              ))}
+            </div>
+          )}
 
           {/* Stock Status Indicator */}
           <div className="flex items-center space-x-4 text-xs font-bold">
             {isOutOfStock ? (
-              <span className="text-red-600 flex items-center space-x-1.5 bg-red-50 px-3.5 py-1.5 rounded-full">
+              <span className="text-rose-600 flex items-center space-x-1.5 bg-rose-50 px-3.5 py-1.5 rounded-full">
                 <XCircle className="w-4 h-4" />
                 <span>Currently Out of Stock</span>
               </span>
             ) : isLowStock ? (
               <span className="text-amber-700 flex items-center space-x-1.5 bg-amber-50 px-3.5 py-1.5 rounded-full">
                 <AlertTriangle className="w-4 h-4" />
-                <span>Hurry! Only {product.stockQuantity} left in stock</span>
+                <span>Hurry! Only {product.stockQuantity} left</span>
               </span>
             ) : (
               <span className="text-emerald-700 flex items-center space-x-1.5 bg-emerald-50 px-3.5 py-1.5 rounded-full">
@@ -221,144 +246,171 @@ export const ProductDetails: React.FC = () => {
             )}
           </div>
 
-          {/* Key Attributes */}
-          {(product.age || product.capacity) && (
-            <div className="grid grid-cols-2 gap-4">
-              {product.age && (
-                <div className="bg-white p-3.5 rounded-2xl border border-slate-100 shadow-sm text-xs">
-                  <span className="text-slate-400 block font-semibold">Recommended Age</span>
-                  <strong className="text-slate-900 font-bold text-sm mt-0.5 block">{product.age}</strong>
-                </div>
-              )}
-              {product.capacity && (
-                <div className="bg-white p-3.5 rounded-2xl border border-slate-100 shadow-sm text-xs">
-                  <span className="text-slate-400 block font-semibold">Weight Capacity</span>
-                  <strong className="text-slate-900 font-bold text-sm mt-0.5 block">{product.capacity}</strong>
-                </div>
-              )}
-            </div>
-          )}
-
-          {/* Quantity Selector & Action CTAs */}
+          {/* Quantity & Action CTAs matching Design Reference */}
           <div className="space-y-3 pt-2">
             <div className="flex items-center space-x-4">
               <span className="text-xs font-bold text-slate-700 uppercase">Quantity:</span>
-              <div className="flex items-center border border-slate-200 rounded-xl overflow-hidden bg-slate-50">
+              <div className="flex items-center border border-slate-300 rounded-xl overflow-hidden bg-white">
                 <button
                   onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                  className="px-3 py-1.5 hover:bg-slate-200 text-slate-700 font-bold transition-colors"
+                  className="px-3 py-1.5 hover:bg-slate-100 text-slate-700 font-bold transition-colors"
                 >
                   -
                 </button>
-                <span className="px-4 py-1.5 text-sm font-bold text-slate-900">{quantity}</span>
+                <span className="px-4 py-1.5 text-sm font-black text-slate-900">{quantity}</span>
                 <button
                   onClick={() => setQuantity(quantity + 1)}
-                  className="px-3 py-1.5 hover:bg-slate-200 text-slate-700 font-bold transition-colors"
+                  className="px-3 py-1.5 hover:bg-slate-100 text-slate-700 font-bold transition-colors"
                 >
                   +
                 </button>
               </div>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
+            {/* Desktop CTAs */}
+            <div className="space-y-2.5 pt-2">
               <button
                 disabled={isOutOfStock}
                 onClick={() => addToCart(product, quantity)}
-                className="w-full bg-brand-purple hover:bg-purple-700 text-white font-black py-3.5 px-6 rounded-2xl shadow-md transition-all flex items-center justify-center space-x-2 text-sm disabled:opacity-50"
+                className="w-full bg-amber-400 hover:bg-amber-500 text-slate-900 font-black py-4 px-6 rounded-2xl shadow-md transition-all flex items-center justify-center space-x-2 text-sm disabled:opacity-50"
               >
-                <ShoppingBag className="w-4 h-4" />
-                <span>Add to Shopping Cart</span>
+                <ShoppingBag className="w-5 h-5" />
+                <span>Add to Cart</span>
               </button>
 
               <button
                 disabled={isOutOfStock}
                 onClick={handleBuyNow}
-                className="w-full bg-slate-900 hover:bg-slate-800 text-white font-black py-3.5 px-6 rounded-2xl shadow-md transition-all text-sm disabled:opacity-50"
+                className="w-full bg-rose-600 hover:bg-rose-700 text-white font-black py-4 px-6 rounded-2xl shadow-md transition-all text-sm disabled:opacity-50"
               >
                 <span>Buy Now</span>
               </button>
-            </div>
 
-            {/* WhatsApp Order Button */}
-            <a
-              href={whatsappUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className={`w-full flex items-center justify-center space-x-2 font-black py-4 px-6 rounded-2xl shadow-lg transition-all text-sm min-h-[50px] ${
-                isOutOfStock
-                  ? 'bg-slate-200 text-slate-400 cursor-not-allowed'
-                  : 'bg-emerald-600 hover:bg-emerald-700 text-white'
-              }`}
-              onClick={(e) => {
-                if (isOutOfStock) e.preventDefault();
-              }}
-            >
-              <Phone className="w-5 h-5 fill-current" />
-              <span>PLACE DIRECT ORDER ON WHATSAPP</span>
-            </a>
+              <a
+                href={whatsappUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className={`w-full flex items-center justify-center space-x-2 font-black py-4 px-6 rounded-2xl shadow-lg transition-all text-sm min-h-[50px] ${
+                  isOutOfStock
+                    ? 'bg-slate-200 text-slate-400 cursor-not-allowed'
+                    : 'bg-emerald-600 hover:bg-emerald-700 text-white'
+                }`}
+                onClick={(e) => {
+                  if (isOutOfStock) e.preventDefault();
+                }}
+              >
+                <Phone className="w-5 h-5 fill-current" />
+                <span>Order on WhatsApp</span>
+              </a>
+            </div>
           </div>
 
-          {/* Trust Guarantees */}
-          <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100 space-y-3 text-xs text-slate-600">
-            <div className="flex items-center space-x-3">
-              <ShieldCheck className="w-5 h-5 text-emerald-600 flex-shrink-0" />
-              <span>Tested & Quality Certified Materials</span>
+          {/* Guarantees */}
+          <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200 grid grid-cols-3 gap-2 text-center text-[11px] font-bold text-slate-700">
+            <div>
+              <Truck className="w-5 h-5 text-amber-500 mx-auto mb-1" />
+              <span>All Kerala Delivery</span>
             </div>
-            <div className="flex items-center space-x-3">
-              <Truck className="w-5 h-5 text-brand-purple flex-shrink-0" />
-              <span>Quick Dispatch across Kozhikode, Malappuram, Kochi & Kerala</span>
+            <div>
+              <ShieldCheck className="w-5 h-5 text-emerald-500 mx-auto mb-1" />
+              <span>Secure Packaging</span>
+            </div>
+            <div>
+              <Phone className="w-5 h-5 text-sky-500 mx-auto mb-1" />
+              <span>Easy Support</span>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Description & Specifications Tabs */}
-      <div className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-100 shadow-sm space-y-8">
-        <div>
-          <h3 className="text-xl font-black text-slate-900 font-display border-b border-slate-100 pb-3 mb-4">
-            Product Overview & Description
-          </h3>
-          <p className="text-slate-600 text-sm leading-relaxed whitespace-pre-line">
-            {product.description}
-          </p>
+      {/* Tabs matching Design Reference (Description, Specifications, Features, FAQ, Delivery) */}
+      <div className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200 shadow-sm space-y-6">
+        <div className="flex border-b border-slate-200 overflow-x-auto gap-4">
+          <button
+            onClick={() => setActiveTab('description')}
+            className={`pb-3 text-xs font-black uppercase tracking-wider border-b-2 transition-colors whitespace-nowrap ${
+              activeTab === 'description' ? 'border-amber-500 text-amber-600' : 'border-transparent text-slate-400 hover:text-slate-700'
+            }`}
+          >
+            Description
+          </button>
+          <button
+            onClick={() => setActiveTab('specifications')}
+            className={`pb-3 text-xs font-black uppercase tracking-wider border-b-2 transition-colors whitespace-nowrap ${
+              activeTab === 'specifications' ? 'border-amber-500 text-amber-600' : 'border-transparent text-slate-400 hover:text-slate-700'
+            }`}
+          >
+            Specifications
+          </button>
+          <button
+            onClick={() => setActiveTab('features')}
+            className={`pb-3 text-xs font-black uppercase tracking-wider border-b-2 transition-colors whitespace-nowrap ${
+              activeTab === 'features' ? 'border-amber-500 text-amber-600' : 'border-transparent text-slate-400 hover:text-slate-700'
+            }`}
+          >
+            Features
+          </button>
+          <button
+            onClick={() => setActiveTab('delivery')}
+            className={`pb-3 text-xs font-black uppercase tracking-wider border-b-2 transition-colors whitespace-nowrap ${
+              activeTab === 'delivery' ? 'border-amber-500 text-amber-600' : 'border-transparent text-slate-400 hover:text-slate-700'
+            }`}
+          >
+            Delivery & Support
+          </button>
         </div>
 
-        {/* Features Bullet Points */}
-        {product.features && product.features.length > 0 && (
-          <div>
-            <h4 className="text-base font-bold text-slate-900 font-display mb-3">Key Highlights & Features</h4>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              {product.features.map((feat, idx) => (
-                <div key={idx} className="flex items-start space-x-2 text-xs text-slate-700 bg-slate-50 p-3 rounded-xl border border-slate-100">
-                  <CheckCircle2 className="w-4 h-4 text-emerald-600 flex-shrink-0 mt-0.5" />
-                  <span>{feat.feature}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
+        <div className="text-xs text-slate-700 leading-relaxed">
+          {activeTab === 'description' && (
+            <p className="whitespace-pre-line">{product.description}</p>
+          )}
 
-        {/* Specifications Table */}
-        {product.specifications && product.specifications.length > 0 && (
-          <div>
-            <h4 className="text-base font-bold text-slate-900 font-display mb-3">Technical Specifications</h4>
-            <div className="border border-slate-100 rounded-2xl overflow-hidden divide-y divide-slate-100 text-xs">
-              {product.specifications.map((spec, idx) => (
-                <div key={idx} className="grid grid-cols-3 p-3 bg-white odd:bg-slate-50">
-                  <span className="font-bold text-slate-700">{spec.key}</span>
-                  <span className="col-span-2 text-slate-600 font-medium">{spec.value}</span>
+          {activeTab === 'specifications' && (
+            <div className="space-y-3">
+              {product.specifications && product.specifications.length > 0 ? (
+                <div className="border border-slate-200 rounded-2xl overflow-hidden divide-y divide-slate-100">
+                  {product.specifications.map((spec, idx) => (
+                    <div key={idx} className="grid grid-cols-3 p-3 bg-white odd:bg-slate-50">
+                      <span className="font-bold text-slate-800">{spec.key}</span>
+                      <span className="col-span-2 text-slate-600 font-medium">{spec.value}</span>
+                    </div>
+                  ))}
                 </div>
-              ))}
+              ) : (
+                <p className="text-slate-500">Standard specifications apply.</p>
+              )}
             </div>
-          </div>
-        )}
+          )}
+
+          {activeTab === 'features' && (
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {product.features && product.features.length > 0 ? (
+                product.features.map((feat, idx) => (
+                  <div key={idx} className="flex items-start space-x-2 bg-slate-50 p-3 rounded-xl border border-slate-100">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-500 flex-shrink-0 mt-0.5" />
+                    <span className="font-semibold">{feat.feature}</span>
+                  </div>
+                ))
+              ) : (
+                <p className="text-slate-500">Feature details listed in product description.</p>
+              )}
+            </div>
+          )}
+
+          {activeTab === 'delivery' && (
+            <div className="space-y-2">
+              <p className="font-bold text-slate-900">Delivery Information</p>
+              <p className="text-slate-600">We deliver electric ride-on cars, toys, and bicycles across Kozhikode, Malappuram, Ernakulam, Thrissur, Kannur, and all Kerala districts within 24 to 48 hours.</p>
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Related Products */}
       {relatedProducts.length > 0 && (
         <div className="space-y-6">
-          <h3 className="text-2xl font-black text-slate-900 font-display">You Might Also Like</h3>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+          <h3 className="text-2xl font-black text-slate-900 font-display">Related Products</h3>
+          <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6">
             {relatedProducts.map((prod) => (
               <ProductCard key={prod.id} product={prod} />
             ))}
